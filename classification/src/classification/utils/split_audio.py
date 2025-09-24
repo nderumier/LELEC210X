@@ -7,7 +7,7 @@ from pydub import AudioSegment
 from tqdm import trange
 
 import common
-from common.logging import logger
+from common.src.common.logging import logger
 
 from ..datasets import SOUND_DURATION
 

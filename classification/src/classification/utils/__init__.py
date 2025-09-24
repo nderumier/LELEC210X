@@ -2,8 +2,10 @@ import struct
 
 import numpy as np
 
-from common.defaults import MELVEC_LENGTH, N_MELVECS
+#from common.defaults import MELVEC_LENGTH, N_MELVECS
 
+MELVEC_LENGTH = 20
+N_MELVECS = 20
 
 def payload_to_melvecs(
     payload: str, melvec_length: int = MELVEC_LENGTH, n_melvecs: int = N_MELVECS
