@@ -19,7 +19,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
+#include "dma.h"
 #include "usart.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -50,7 +53,7 @@ volatile int state;
 volatile uint16_t ADCBuffer[2*ADC_BUF_SIZE]; /* ADC group regular conversion data (array of data) */
 volatile uint16_t* ADCData1;
 volatile uint16_t* ADCData2;
-
+uint32_t last_press = 0;
 char hex_encoded_buffer[4*ADC_BUF_SIZE+1];
 /* USER CODE END PV */
 
@@ -66,8 +69,22 @@ uint32_t get_signal_power(uint16_t *buffer, size_t len);
 /* USER CODE BEGIN 0 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == B1_Pin) {
-		state = 1-state;
+		if (HAL_GetTick() - last_press > 200) { // debounce 200 ms
+		            last_press = HAL_GetTick();
+		            state = 1;
+		        }
+
+
 	}
+}
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc){
+	if(hadc -> Instance == ADC1){
+		HAL_ADC_Stop_DMA(&hadc1);
+		HAL_TIM_Base_Stop(&htim3);
+
+		print_buffer((uint16_t *)ADCBuffer);
+	}
+
 }
 
 void hex_encode(char* s, const uint8_t* buf, size_t len) {
@@ -100,6 +117,7 @@ uint32_t get_signal_power(uint16_t *buffer, size_t len){
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -122,7 +140,10 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_LPUART1_UART_Init();
+  MX_ADC1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   RetargetInit(&hlpuart1);
   printf("Hello world!\r\n");
@@ -135,10 +156,32 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-	HAL_Delay(500);
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-	HAL_Delay(500);
+//	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+//	HAL_Delay(500);
+//	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+//	HAL_Delay(500);
+
+	  /* code to recuperate tension value of sound*/
+//	  if (state) {
+//	              state = 0;
+//
+//	              HAL_ADC_Start(&hadc1);
+//	              if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK) {
+//	                  uint32_t value = HAL_ADC_GetValue(&hadc1);
+//	                  printf("SND:%lu\r\n", value);
+//	              }
+//	              HAL_ADC_Stop(&hadc1);
+//	          }
+//	      }
+
+	  /*code to sample data*/
+	  if (state){
+		  state = 0;
+		  HAL_TIM_Base_Start(&htim3);
+		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCBuffer,ADC_BUF_SIZE);
+
+	  }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
