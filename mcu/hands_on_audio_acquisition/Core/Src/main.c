@@ -38,7 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ADC_BUF_SIZE 256
+#define ADC_BUF_SIZE 30000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -79,12 +79,28 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 }
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc){
 	if(hadc -> Instance == ADC1){
-		HAL_ADC_Stop_DMA(&hadc1);
-		HAL_TIM_Base_Stop(&htim3);
+		uint32_t power = get_signal_power((uint16_t*)ADCData2, ADC_BUF_SIZE);
+		printf("Power2: %lu\r\n", power);
+		if (power > 50){
+//			HAL_ADC_Stop_DMA(&hadc1);
+//			HAL_TIM_Base_Stop(&htim3);
 
-		print_buffer((uint16_t *)ADCBuffer);
+			print_buffer((uint16_t *)ADCBuffer);
+		}
+
 	}
 
+}
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc){
+	if (hadc -> Instance == ADC1){
+		uint32_t power = get_signal_power((uint16_t*)ADCData1, ADC_BUF_SIZE);
+		printf("Power1: %lu\r\n", power);
+		if (power > 50){
+//			HAL_ADC_Stop_DMA(&hadc1);
+//			HAL_TIM_Base_Stop(&htim3);
+			print_buffer((uint16_t *)ADCBuffer);
+		}
+	}
 }
 
 void hex_encode(char* s, const uint8_t* buf, size_t len) {
@@ -178,7 +194,7 @@ int main(void)
 	  if (state){
 		  state = 0;
 		  HAL_TIM_Base_Start(&htim3);
-		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCBuffer,ADC_BUF_SIZE);
+		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCBuffer,2 *ADC_BUF_SIZE);
 
 	  }
 

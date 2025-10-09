@@ -67,7 +67,7 @@ if __name__ == "__main__":
         print("Launch this script with [-p PORT_REF] to access the communication port")
 
     else:
-        plt.figure(figsize=(10, 5))
+        #plt.figure(figsize=(10, 5))
         input_stream = reader(port=args.port)
         msg_counter = 0
 
@@ -77,7 +77,7 @@ if __name__ == "__main__":
             buffer_size = len(msg)
             times = np.linspace(0, buffer_size - 1, buffer_size) * 1 / FREQ_SAMPLING
             voltage_mV = msg * VDD / VAL_MAX_ADC * 1e3
-
+            """
             plt.plot(times, voltage_mV)
             plt.title(f"Acquisition #{msg_counter}")
             plt.xlabel("Time (s)")
@@ -86,7 +86,7 @@ if __name__ == "__main__":
             plt.draw()
             plt.pause(0.001)
             plt.cla()
-
+            """
             generate_audio(msg, f"acq-{msg_counter}")
 
             msg_counter += 1
