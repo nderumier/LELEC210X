@@ -1,6 +1,6 @@
 import numpy as np
 
-audio = np.load(r"C:\Users\tvang\LELEC210X\contrib\src\contrib\data\audio\audio_20251008-181802-452895.npy")
+audio = np.load(r"C:\Users\tvang\LELEC210X\contrib\src\contrib\data\audio\Hello_from_the_group_D.npy")
 
 print(audio.shape, audio.dtype)
 import sounddevice as sd
