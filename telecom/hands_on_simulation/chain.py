@@ -118,6 +118,8 @@ class Chain:
         raise NotImplementedError
 
 
+        
+
 class BasicChain(Chain):
     name = "Basic Tx/Rx chain"
 
@@ -188,11 +190,21 @@ class BasicChain(Chain):
 
         # TO DO: generate the reference waveforms used for the correlation
         # hint: look at what is done in modulate() in chain.py
+        fd = self.freq_dev  # Frequency deviation, Delta_f
+        B = self.bit_rate  # B=1/T
+
+        ref0 = np.exp(1j *2 * np.pi * fd * (np.arange(R) / R) / B)  #  reference waveform for + delta f
+        ref1 = np.exp(-1j *2 * np.pi * fd * (np.arange(R) / R) / B)  #  reference waveform for - delta f
+
 
         # TO DO: compute the correlations with the two reference waveforms (r0 and r1)
+        r0 = np.sum(y * ref0, axis=1) / R
+        r1 = np.sum(y * ref1, axis=1) / R # division by R for normalization
+        
+
 
         # TO DO: performs the decision based on r0 and r1
 
-        bits_hat = np.zeros(nb_syms, dtype=int)
+        bits_hat = (np.abs(r1)> np.abs(r0)).astype(int)
 
         return bits_hat
