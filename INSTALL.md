@@ -68,7 +68,6 @@ please follow one of next subsections.
 
 In order to install GNU Radio, you need to have access to a Linux system. If your host system does not run a Linux distribution, you will find some suggestions for obtaining access to one below.
 
-
 ### Install Ubuntu via Windows Subsystem for Linux
 
 Windows Subsystem for Linux (WSL) is a Windows program that makes running a Linux image super simple!
@@ -80,8 +79,7 @@ It will allow you to clone the git of the course on your Windows system and **do
 e.g., programming the MCU, modify the telecom and classification parts,
 while **only using WSL to compile** the code and run the Linux applications, i.e., GNU Radio.
 
-We recommend using one of the latest Ubuntu releases, Ubuntu-22.04, for the project. 
-<!---However, if it is not available on your computer, you can use Ubuntu-20.04.--->
+We recommend using Ubuntu-22.04 (**best**) or Ubuntu-24.04, for the project.
 
 In order to install the WSL and Ubuntu-22.04 on your Windows system,
 we will use the following [guide](https://learn.microsoft.com/en-us/windows/wsl/install) from Microsoft.
@@ -137,14 +135,12 @@ This is going to be, by far, the most performant solution, but will also require
 much more disk space. This solution is recommended for people that might
 want to use Linux later-on, and have at least 60 Go of free memory.
 
-
 ### Install on VirtualBox
 
 You can get Ubuntu running with a virtual machine (VM) using VirtualBox.
 As you will have to run a complete Linux image from your Windows system,
 this solution has a **significant overhead** in terms of processing capability and also in terms of accessibility.
 Indeed, you will work in desktop entirely contained in a window which might be impractical.
-
 
 ## Installation steps
 
@@ -191,7 +187,7 @@ some script
 before you can work with them, and it's also possible to have an arbitrary number of nested
 venvs, which makes it hard to know which environment is activated.
 To avoid this issue, we use
-[uv](https://uv.astral.sh).
+[uv](https://docs.astral.sh/uv/).
 uv works in pair with `pyproject.toml` files,
 so that you can specify requirements for your project, and much more!
 
@@ -201,8 +197,7 @@ so that you can specify requirements for your project, and much more!
 > assistants to debug.
 
 **Please** read the
-[detailed installation guide](https://uv.astral.sh/guide/installation/),
-as well as the section on "_Add Shims to Path_".
+[detailed installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
 ### Host or Ubuntu - Install FFmpeg
 
@@ -249,7 +244,7 @@ sudo apt-get install cmake
 
 ### Ubuntu - Install GNU Radio
 
-#### Ubuntu-22.04
+#### Ubuntu-22.04 and 24.04
 
 ```bash
 sudo add-apt-repository ppa:gnuradio/gnuradio-releases
@@ -327,11 +322,51 @@ by the company who sells the LimeSDR, _Myriad-RF_.
 We start by installing _LimeSuite_, i.e.,
 a collection of software supporting several hardware platforms including the LimeSDR.
 
+##### Ubuntu-22.04
+
 ```bash
 sudo add-apt-repository -y ppa:myriadrf/drivers
 sudo apt-get update
 sudo apt-get install limesuite liblimesuite-dev limesuite-udev limesuite-images
 sudo apt-get install soapysdr-tools
+```
+
+##### Ubuntu-24.04
+
+Some packages, like `limesuite-images`, are not built for Ubuntu-24.04. As a result, we recommend building
+_LimeSuite_ from source (adapted from [this page](https://wiki.myriadrf.org/Lime_Suite)). Because we install from source,
+you need to open a terminal in a folder where you will download source files (see below). Don't do that inside the project folder.
+
+First, install the build depedencies:
+
+```bash
+#packages for soapysdr available at myriadrf PPA
+sudo add-apt-repository -y ppa:myriadrf/drivers
+sudo apt-get update
+
+#install core library and build dependencies
+sudo apt-get install git g++ cmake libsqlite3-dev
+
+#install hardware support dependencies
+sudo apt-get install libsoapysdr-dev libi2c-dev libusb-1.0-0-dev
+
+#install graphics dependencies
+sudo apt-get install libwxgtk3.0-dev freeglut3-dev
+```
+
+Then, clone the repository and build from source:
+
+```bash
+git clone https://github.com/myriadrf/LimeSuite.git
+cd LimeSuite
+git checkout stable
+mkdir builddir && cd builddir
+cmake ../
+make -j4
+sudo make install
+sudo ldconfig
+sudo ../udev-rules
+sudo ./install.sh
 ```
 
 #### Ubuntu - Install Gr-LimeSDR
@@ -341,13 +376,12 @@ To do so, we use the following command,
 taken from the [official website](https://wiki.myriadrf.org/Gr-limesdr_Plugin_for_GNURadio).
 **/!\ Again, this step will vary depending on your Ubuntu release**
 
-##### Ubuntu-22.04
+##### Ubuntu-22.04 and 24.04
 
-In this case, we are going to install _Gr-LimeSDR_ from source. On Ubuntu, go to any directory in
-which you can store and install the program. It can be `/root` for example.
+In this case, we are going to install _Gr-LimeSDR_ from source. In a terminal, go to any directory in
+which you can store and install the program, but we recommend not doing that in the projet folder.
 
 ```bash
-cd /root
 git clone https://github.com/chrisjohgorman/gr-limesdr.git
 cd gr-limesdr
 mkdir build
@@ -368,7 +402,7 @@ so that GNU Radio knows where this custom python package has been installed.
 First, go **through an Ubuntu terminal** to the location of this git on your Host system
 (it might be Windows, in which case you have to go through the `/mnt/XX` directory in the Ubuntu terminal).
 As it can be quite cumbersome of typing this path every time you want to recompile a GNU Radio package,
-we advise you to create some environment variables for their path on Ubuntu. For example :
+we advise you to create some environment variables for their path on Ubuntu. For example:
 
 ```bash
 echo "export GRFSK='/mnt/d/XXX/telecom/hands_on_measurements/gr-fsk'" >> ~/.bashrc
@@ -387,7 +421,7 @@ sudo ldconfig
 
 To ensure the Python packages you installed will be found when running GNU Radio we must
 ensure the `PYTHONPATH` variable is properly set. In the prompted log of the above installation commands,
-you should see multiple lines such as `... /usr/local/XXX/dist-packages/fsk/XXX`.
+you should see multiple lines such as `... /usr/local/lib/python3.XX/dist-packages/fsk/XXX`.
 Now run the command :
 
 ```bash
@@ -401,8 +435,7 @@ to the `PYTHONPATH` variable with the following command you should adapt to your
 echo "export PYTHONPATH='/usr/local/XXX/dist-packages/:$PYTHONPATH'" >> ~/.bashrc
 ```
 
-#### (After H4) Ubuntu - Install Gr-LimeSDR custom components
-
+#### (After H3b) Ubuntu - Install Gr-LimeSDR custom components
 
 #### For everyone
 
@@ -410,17 +443,30 @@ Then, through an Ubuntu terminal, go into the `./telecom/gr-limesdr` directory a
 
 ```bash
 mkdir build
-cd build /
+cd build
 cmake ..
 sudo make install
 sudo ldconfig
 ```
 
-If the compilation error "Python bindings for XXX.h are out of sync" occurs, just go back in the `./telecom/gr-limesdr` folder and use the following commands :
+If the compilation error `Python bindings for {sink,source}_fpga.h are out of sync` occurs, just go back in the parent folder (with `cd -`) folder and use the following commands :
+
 ```bash
-gr_modtool bind -u XXX
+gr_modtool bind -u sink_fpga
+gr_modtool bind -u source_fpga
 ```
-You might need to do this command for multiples blocks, most probably sink_fpga and source_fpga.
+
+Then, go back to the build folder (with `cd -` or `cd build`) and re-try to compile from source:
+
+```bash
+cmake ..
+sudo make install
+sudo ldconfig
+```
+
+If you encounter errors on other blocks than `sink_fpga` and `source_fpga`,
+please try `gr_modtool bind -u XXX`, where `XXX` is the block name,
+and please report the issue on this GitHub repository!
 
 #### Ubuntu - Testing the installation of LimeSDR
 
@@ -514,7 +560,7 @@ it will then automatically detect the MAX 10 device support file. You can procee
 To install the Python dependencies, you can simply run:
 
 ```bash
-uv sync run
+uv sync
 ```
 
 You should only perform this once (if `pyproject.toml` does not change).
