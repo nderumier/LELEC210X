@@ -127,9 +127,7 @@ class BasicChain(Chain):
 
     cfo_val, sto_val = np.nan, np.nan  # CFO and STO are random
 
-<<<<<<< HEAD:telecom/hands_on_simulation/chain.py
-    bypass_preamble_detect = False
-=======
+
     ideal_preamble_detect = True
 
     def preamble_detect_ppd(self, y):
@@ -158,7 +156,7 @@ class BasicChain(Chain):
             else None
         )
         return first_idx
->>>>>>> origin/main:telecom/python/telecom/chain.py
+
 
     def preamble_detect(self, y):
         """Detect a preamble computing the received energy (average on a window)."""
