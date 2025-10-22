@@ -127,7 +127,6 @@ class BasicChain(Chain):
 
     cfo_val, sto_val = np.nan, np.nan  # CFO and STO are random
 
-
     ideal_preamble_detect = True
 
     def preamble_detect_ppd(self, y):
@@ -170,18 +169,35 @@ class BasicChain(Chain):
 
         return None
 
-    ideal_cfo_estimation = True
+    ideal_cfo_estimation = False
 
     def cfo_estimation(self, y):
-        """Estimates CFO using Moose algorithm, on first samples of preamble."""
-        # TO DO: extract 2 blocks of size N*R at the start of y
-        N = 4  # You can change this value if needed
-        # TO DO: apply the Moose algorithm on these two blocks to estimate the CFO
-        cfo_est = 0
+        """
+        Estimates CFO using Moose algorithm, on first samples of preamble.
+        """
+        R = self.osr_rx      # Receiver oversampling factor
+        N = 2       
+                 # Number of CPFSK symbols per block
+        Nt = N * R           # Number of samples per block
+        Ts = 1 / self.bit_rate  # Symbol duration
+
+        # --- Extract the two repeated blocks ---
+        y1 = y[0:Nt]
+        y2 = y[Nt:2*Nt]
+
+        # --- Moose algorithm correlation ---
+        numerator = np.sum(y2 * np.conj(y1))
+        denominator = np.sum(np.abs(y1)**2)
+
+        alpha_hat = numerator / denominator
+
+        # --- CFO estimate ---
+        # Frequency offset = phase(alpha_hat) / (2π * Nt * Ts / R)
+        cfo_est = np.angle(alpha_hat) / (2 * np.pi * Nt * Ts / R)
 
         return cfo_est
-
-    ideal_sto_estimation = True
+    
+    ideal_sto_estimation = False
 
     def sto_estimation(self, y):
         """Estimates symbol timing (fractional) based on phase shifts."""
