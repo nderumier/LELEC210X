@@ -154,7 +154,7 @@ add_custom_target(uninstall
 ########################################################################
 add_subdirectory(include/fsk)
 add_subdirectory(lib)
-add_subdirectory(apps)
+#add_subdirectory(apps)
 add_subdirectory(docs)
 add_subdirectory(swig)
 add_subdirectory(python)
