@@ -6,7 +6,7 @@
 #define INC_EVAL_RADIO_H_
 
 // Radio evaluation parameters
-#define MIN_PA_LEVEL -16 // initial Tx transmit power, in dBm
+#define MIN_PA_LEVEL -22 // initial Tx transmit power, in dBm
 #define MAX_PA_LEVEL 0 // final Tx transmit power, in dBm
 #define N_PACKETS 5 // number of packets transmitted for each Tx power level
 #define PAYLOAD_LEN 100 // payload length of the transmitted packets

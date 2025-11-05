@@ -172,6 +172,16 @@ class BasicChain(Chain):
     ideal_cfo_estimation = False
 
     def cfo_estimation(self, y):
+<<<<<<< HEAD
+        R = self.osr_rx      # Receiver oversampling factor
+        N = 4                # Number of CPFSK symbols per block, /!\ N=2 
+        Nt = N * R           # Number of samples per block
+        Ts = 1 / self.bit_rate  # Symbol duration
+
+        y1 = y[0:Nt]
+        y2 = y[Nt:2*Nt]
+
+=======
         """
         Estimates CFO using Moose algorithm, on first samples of preamble.
         """
@@ -186,13 +196,17 @@ class BasicChain(Chain):
         y2 = y[Nt:2*Nt]
 
         # --- Moose algorithm correlation ---
+>>>>>>> a5aef046c08ba75f745ca0fa99b9a0077bcf7bbb
         numerator = np.sum(y2 * np.conj(y1))
         denominator = np.sum(np.abs(y1)**2)
 
         alpha_hat = numerator / denominator
 
+<<<<<<< HEAD
+=======
         # --- CFO estimate ---
         # Frequency offset = phase(alpha_hat) / (2π * Nt * Ts / R)
+>>>>>>> a5aef046c08ba75f745ca0fa99b9a0077bcf7bbb
         cfo_est = np.angle(alpha_hat) / (2 * np.pi * Nt * Ts / R)
 
         return cfo_est
@@ -246,5 +260,4 @@ class BasicChain(Chain):
 
         bits_hat = (np.abs(r1)> np.abs(r0)).astype(int)
 
-        return bits_hat
         return bits_hat
