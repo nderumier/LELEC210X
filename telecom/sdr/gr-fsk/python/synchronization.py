@@ -31,7 +31,6 @@ def cfo_estimation(y, B, R, Fdev):
     """
     Estimate CFO using Moose algorithm, on first samples of preamble
     """
-    
     N = 2                # Number of CPFSK symbols per block, /!\ N=2 
     Nt = N * R           # Number of samples per block
     Ts = 1 / B           # Symbol duration
