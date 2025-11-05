@@ -173,11 +173,20 @@ class BasicChain(Chain):
     ideal_cfo_estimation = True
 
     def cfo_estimation(self, y):
-        """Estimates CFO using Moose algorithm, on first samples of preamble."""
-        # TO DO: extract 2 blocks of size N*R at the start of y
-        N = 4  # You can change this value if needed
-        # TO DO: apply the Moose algorithm on these two blocks to estimate the CFO
-        cfo_est = 0
+        R = self.osr_rx      # Receiver oversampling factor
+        N = 4                # Number of CPFSK symbols per block, /!\ N=2 
+        Nt = N * R           # Number of samples per block
+        Ts = 1 / self.bit_rate  # Symbol duration
+
+        y1 = y[0:Nt]
+        y2 = y[Nt:2*Nt]
+
+        numerator = np.sum(y2 * np.conj(y1))
+        denominator = np.sum(np.abs(y1)**2)
+
+        alpha_hat = numerator / denominator
+
+        cfo_est = np.angle(alpha_hat) / (2 * np.pi * Nt * Ts / R)
 
         return cfo_est
 
@@ -230,5 +239,4 @@ class BasicChain(Chain):
 
         bits_hat = (np.abs(r1)> np.abs(r0)).astype(int)
 
-        return bits_hat
         return bits_hat

@@ -31,7 +31,22 @@ def cfo_estimation(y, B, R, Fdev):
     """
     Estimate CFO using Moose algorithm, on first samples of preamble
     """
-    return 0.0  # TODO
+    
+    N = 2                # Number of CPFSK symbols per block, /!\ N=2 
+    Nt = N * R           # Number of samples per block
+    Ts = 1 / B           # Symbol duration
+
+    y1 = y[0:Nt]
+    y2 = y[Nt:2*Nt]
+
+    numerator = np.sum(y2 * np.conj(y1))
+    denominator = np.sum(np.abs(y1)**2)
+
+    alpha_hat = numerator / denominator
+
+    cfo_est = np.angle(alpha_hat) / (2 * np.pi * Nt * Ts / R)
+
+    return cfo_est
 
 
 def sto_estimation(y, B, R, Fdev):
