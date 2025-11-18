@@ -127,7 +127,7 @@ class BasicChain(Chain):
 
     cfo_val, sto_val = np.nan, np.nan  # CFO and STO are random
 
-    ideal_preamble_detect = True
+    ideal_preamble_detect = False
 
     def preamble_detect_ppd(self, y):
         """Detect a preamble computing the received energy (average on a window)."""
