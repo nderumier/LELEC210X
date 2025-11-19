@@ -67,7 +67,7 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        ### TO COMPLETE
+        resig = signal.resample(sig, int(len(sig) * newsr / sr))
 
         return (resig, newsr)
 
@@ -102,18 +102,22 @@ class AudioUtil:
 
         return (sig, sr)
 
-    def scaling(audio, scaling_limit=5) -> tuple[ndarray, int]:
-        """
-        Augment the audio signal by scaling it by a random factor.
+    def scaling(audio, scaling_limit=5) -> tuple[np.ndarray, int]:
+        """Augment the audio signal by scaling it by a random factor.
 
         :param audio: The audio signal as a tuple (signal, sample_rate).
-        :param scaling_limit: The maximum scaling factor.
-        """
+        :param scaling_limit: The maximum scaling factor."""
+        
         sig, sr = audio
 
         ### TO COMPLETE
+        # Draw a random scaling factor
+        scale = np.random.uniform(1/scaling_limit, scaling_limit)
 
-        return audio
+        # Apply scaling
+        sig_scaled = sig * scale
+
+        return sig_scaled, sr
 
     def add_noise(audio, sigma=0.05) -> tuple[ndarray, int]:
         """
@@ -125,8 +129,10 @@ class AudioUtil:
         sig, sr = audio
 
         ### TO COMPLETE
+        noise = np.random.normal(0, sigma, size=sig.shape)
+        sig_noisy = sig + noise
 
-        return audio
+        return sig_noisy, sr
 
     def echo(audio, nechos=2) -> tuple[ndarray, int]:
         """
@@ -146,18 +152,32 @@ class AudioUtil:
         sig = fftconvolve(sig, echo_sig, mode="full")[:sig_len]
         return (sig, sr)
 
-    def filter(audio, filt) -> tuple[ndarray, int]:
-        """
-        Filter the audio signal with a provided filter. Note the filter is given for positive frequencies only and is thus symmetrized in the function.
+    import numpy as np
 
-        :param audio: The audio signal as a tuple (signal, sample_rate).
-        :param filt: The filter to apply.
+    def filter(audio, filt) -> tuple[np.ndarray, int]:
+        """
+        Filter the audio signal with a provided filter. The filter is given 
+        for positive frequencies only and is symmetrized inside the function.
         """
         sig, sr = audio
 
-        ### TO COMPLETE
+        # FFT of signal
+        S = np.fft.rfft(sig)
 
-        return (sig, sr)
+        # filt corresponds to positive frequencies up to Nyquist
+        # Ensure filter has same length as S
+        filt = np.asarray(filt)
+        if filt.shape[0] != S.shape[0]:
+            raise ValueError("Filter length must match rFFT length of the signal.")
+
+        # Apply filter
+        S_filtered = S * filt
+
+        # Inverse rFFT
+        sig_filtered = np.fft.irfft(S_filtered, n=len(sig))
+
+        return sig_filtered, sr
+
 
     def add_bg(
         audio, dataset, num_sources=1, max_ms=5000, amplitude_limit=0.1
@@ -173,20 +193,87 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        ### TO COMPLETE
+        # On force le signal de base à une durée max_ms
+        sig, sr = AudioUtil.pad_trunc((sig, sr), max_ms)
+        sig_len = len(sig)
 
-        return audio
+        classnames = dataset.list_classes()
 
-    def specgram(audio, Nft=512, fs2=11025) -> ndarray:
+        for _ in range(num_sources):
+            # Choix aléatoire d'une classe
+            classname = random.choice(classnames)
+
+            # Choix aléatoire d'un index dans cette classe
+            idx = random.randint(0, dataset.naudio[classname] - 1)
+
+            # Récupération du chemin de fichier et chargement
+            bg_file = dataset[(classname, idx)]
+            bg_audio = AudioUtil.open(bg_file)
+
+            # Rééchantillonnage sur la même fréquence
+            bg_audio = AudioUtil.resample(bg_audio, sr)
+
+            # Tronquer/padder à la même durée
+            bg_audio = AudioUtil.pad_trunc(bg_audio, max_ms)
+            bg_sig, _ = bg_audio
+
+            # Normalisation de l'arrière-plan puis mise à une amplitude aléatoire
+            if np.max(np.abs(bg_sig)) > 0:
+                bg_sig = bg_sig / np.max(np.abs(bg_sig))
+
+            # Amplitude max contrôlée
+            scale = random.uniform(0.0, amplitude_limit)
+            bg_sig = bg_sig * scale
+
+            # Somme au signal principal (même longueur normalement)
+            if len(bg_sig) != sig_len:
+                # Sécurité : on ajuste la longueur si besoin
+                min_len = min(sig_len, len(bg_sig))
+                sig[:min_len] += bg_sig[:min_len]
+            else:
+                sig += bg_sig
+
+            # Éviter la saturation (si |sig| > 1)
+            max_abs = np.max(np.abs(sig))
+            if max_abs > 1.0:
+                sig = sig / max_abs
+
+            return (sig, sr)
+
+
+    def specgram(audio, Nft=512, fs2=11025) -> np.ndarray:
         """
         Compute a Spectrogram.
 
-        :param aud: The audio signal as a tuple (signal, sample_rate).
+        :param audio: The audio signal as a tuple (signal, sample_rate).
         :param Nft: The number of points of the FFT.
-        :param fs2: The sampling frequency.
+        :param fs2: Target sampling frequency (resampling).
         """
-        ### TO COMPLETE
-        # stft /= float(2**8)
+        sig, sr = audio
+
+        # --- 1. RESAMPLE IF NECESSARY ---
+        if sr != fs2:
+            # Resample to match target sampling frequency
+            new_length = int(len(sig) * fs2 / sr)
+            sig = AudioUtil.resample(sig, new_length)
+            sr = fs2
+
+        # --- 2. CROP SIGNAL TO MULTIPLE OF Nft ---
+        L = len(sig) - (len(sig) % Nft)
+        sig = sig[:L]
+
+        # --- 3. FRAME THE SIGNAL ---
+        frames = np.reshape(sig, (L // Nft, Nft))
+
+        # --- 4. APPLY WINDOW ---
+        frames_win = frames * np.hamming(Nft)
+
+        # --- 5. COMPUTE FFT ---
+        stft = np.fft.fft(frames_win, axis=1)
+
+        # --- 6. KEEP POSITIVE FREQUENCIES + MAGNITUDE ---
+        stft = np.abs(stft[:, : Nft // 2].T)
+
         return stft
 
     def get_hz2mel(fs2=11025, Nft=512, Nmel=20) -> ndarray:
@@ -203,16 +290,38 @@ class AudioUtil:
 
         return mels
 
-    def melspectrogram(audio, Nmel=20, Nft=512, fs2=11025) -> ndarray:
+    def melspectrogram(audio, Nmel=20, Nft=512, fs2=11025) -> np.ndarray:
         """
         Generate a Melspectrogram.
 
         :param audio: The audio signal as a tuple (signal, sample_rate).
         :param Nmel: The number of mel bands.
         :param Nft: The number of points of the FFT.
-        :param fs2: The sampling frequency.
+        :param fs2: The sampling frequency after resampling.
         """
-        ### TO COMPLETE
+        sig, sr = audio
+
+        # --- 1. RESAMPLING ---
+        if sr != fs2:
+            new_length = int(len(sig) * fs2 / sr)
+            y = AudioUtil.resample(sig, new_length)
+        else:
+            y = sig
+
+        # --- 2. STFT / SPECTROGRAM ---
+        stft = AudioUtil.specgram((y, fs2), Nft=Nft, fs2=fs2)   # Use your implementation
+
+        # --- 3. MEL FILTER BANK ---
+        mels = librosa.filters.mel(sr=fs2, n_fft=Nft, n_mels=Nmel)
+
+        # Adjust dimensions (same as teacher’s code)
+        mels = mels[:, :-1]
+
+        # --- 4. NORMALIZE MEL FILTER BANK ---
+        mels = mels / np.max(mels)
+
+        # --- 5. APPLY MEL TRANSFORM ---
+        melspec = mels @ stft
 
         return melspec
 
