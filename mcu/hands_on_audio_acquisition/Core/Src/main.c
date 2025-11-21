@@ -88,7 +88,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc){
 		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
 		print_buffer((uint16_t *)ADCBuffer);
 		HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-		__WFI();
+
 //		}
 
 	}
@@ -197,7 +197,7 @@ int main(void)
 	  if (state){
 		  state = 0;
 		  HAL_TIM_Base_Start(&htim3);
-		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCBuffer,2 *ADC_BUF_SIZE);
+		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCBuffer,ADC_BUF_SIZE);
 
 	  }
 	  __WFI();
@@ -271,8 +271,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

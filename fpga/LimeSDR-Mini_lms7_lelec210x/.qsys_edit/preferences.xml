@@ -3,20 +3,20 @@
  <debug showDebugMenu="0" />
  <systemtable filter="All Interfaces">
   <columns>
-   <connections preferredWidth="111" />
+   <connections preferredWidth="79" />
    <irq preferredWidth="34" />
-   <name preferredWidth="434" />
+   <name preferredWidth="264" />
    <inputclock preferredWidth="95" />
-   <export preferredWidth="161" />
-   <description preferredWidth="242" />
+   <export preferredWidth="94" />
+   <description preferredWidth="189" />
    <baseaddress preferredWidth="56" />
    <endaddress preferredWidth="30" />
   </columns>
  </systemtable>
- <library expandedCategories="Project/LELEC2102_IPs,Library,Project" />
- <window width="1938" height="1038" x="-9" y="-9" />
+ <library expandedCategories="Project,Library/DSP,Library" />
+ <window width="2906" height="1730" x="-13" y="-13" />
  <generation
-   path="_PROJECT_NAME_/"
+   path="ip/packet_presence_detection/"
    testbench_system="STANDARD"
    testbench_simulation="VERILOG"
    greybox="1"

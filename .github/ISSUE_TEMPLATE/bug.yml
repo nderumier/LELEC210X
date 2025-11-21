@@ -22,7 +22,7 @@ body:
       required: true
     - label: Read the [best practice](https://github.com/LELEC210X/LELEC210X/wiki/Best-practice-guide) and checked if my bug was not one of the common bugs documented in the Wiki;
       required: true
-    - label: Updated my Python virtual environment with `rye sync`;
+    - label: Updated my Python virtual environment with `uv sync`;
       required: true
 
 - type: textarea
@@ -41,7 +41,7 @@ body:
       Enter the command or program that failed.
       This will be automatically formatted into code, so no need for backticks.
       If the bug occred inside a program, like GNU Radio, insert the name of the program.
-    placeholder: rye sync
+    placeholder: uv sync
   validations:
     required: true
 
