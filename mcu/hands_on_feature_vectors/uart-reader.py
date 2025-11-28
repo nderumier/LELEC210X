@@ -4,7 +4,8 @@ ELEC PROJECT - 210x
 """
 
 import argparse
-
+import os
+import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import serial
@@ -67,10 +68,53 @@ if __name__ == "__main__":
         input_stream = reader(port=args.port)
         msg_counter = 0
 
+        # Load SVM model
+        print("Loading audio classification model...")
+        with open(r"C:\Users\natha\Documents\Master1\Q1\LELEC2102_-_Project_in_Electrical_Engineering_Integratio_of_wireles_embedded_sensing_systems\LELEC210X\classification\data\models\model_audio_svm.pickle", "rb") as f:
+            clf = pickle.load(f)
+        scaler=clf["scaler"]
+        pca = clf["pca"]
+        model = clf["model"]
+
+        dataset_dir = r"C:\Users\natha\Documents\Master1\Q1\LELEC2102_-_Project_in_Electrical_Engineering_Integratio_of_wireles_embedded_sensing_systems\New_dataset"
+        os.makedirs(dataset_dir, exist_ok=True)
+
+        X_save = []   # feature vectors
+        y_save = []   # predicted classes
+        print("Model loaded.\n")
+
         for melvec in input_stream:
             msg_counter += 1
 
             print(f"MEL Spectrogram #{msg_counter}")
+
+            feat = melvec.reshape(-1).astype(float)
+
+            # Flatten into 1D vector
+            feature_vector = melvec.reshape(-1).astype(float)
+
+            # Normalisation identique
+            feature_norm = feature_vector / np.linalg.norm(feature_vector)
+
+            # PCA transform
+            feature_pca = pca.transform([feature_norm])
+
+            # Prediction
+            prediction = model.predict(feature_pca)[0]
+            print(f"Predicted class: {prediction}")
+
+            # ----- SAVE VECTORS -----
+            X_save.append(feat)
+            y_save.append(prediction)
+
+            # Save periodically
+            if msg_counter % 10 == 0:
+                np.save(dataset_dir + "feature_vectors.npy", np.array(X_save))
+                np.save(dataset_dir + "labels.npy", np.array(y_save))
+                print(f"💾 Saved {msg_counter} samples so far...")
+
+
+            # ----- PLOTTING -----
 
             plt.figure()
             plot_specgram(
