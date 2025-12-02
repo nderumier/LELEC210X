@@ -193,6 +193,7 @@ class AudioUtil:
         """
         sig, sr = audio
 
+        sig = np.copy(sig)
         # On force le signal de base à une durée max_ms
         sig, sr = AudioUtil.pad_trunc((sig, sr), max_ms)
         sig_len = len(sig)
@@ -233,12 +234,12 @@ class AudioUtil:
             else:
                 sig += bg_sig
 
-            # Éviter la saturation (si |sig| > 1)
-            max_abs = np.max(np.abs(sig))
-            if max_abs > 1.0:
-                sig = sig / max_abs
+        # Éviter la saturation (si |sig| > 1)
+        max_abs = np.max(np.abs(sig))
+        if max_abs > 1.0:
+            sig = sig / max_abs
 
-            return (sig, sr)
+        return (sig, sr)
 
 
     def specgram(audio, Nft=512, fs2=11025) -> np.ndarray:

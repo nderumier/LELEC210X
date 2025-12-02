@@ -55,6 +55,8 @@ class flag_detector(gr.basic_block):
             out_sig=[np.complex64],
         )
 
+        self.message_port_register_out(gr.pmt.intern("SignalPow"))
+
         self.gr_version = gr.version()
         self.logger = logging.getLogger("sync")
 
