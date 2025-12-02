@@ -30,8 +30,9 @@ void Spectrogram_Format(q15_t *buf)
 
 	// /!\ When multiplying/dividing by a power 2, always prefer shifting left/right instead, ARM instructions to do so are more efficient.
 	// Here we should shift left by 3.
-
+	start_cycle_count();
 	arm_shift_q15(buf, 3, buf, SAMPLES_PER_MELVEC);
+	stop_cycle_count("Spectrogram_Compute");
 
 	// STEP 0.2 : Remove DC Component
 	//            --> Pointwise substract
@@ -52,7 +53,7 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	// STEP 1  : Windowing of input samples
 	//           --> Pointwise product
 	//           Complexity: O(N)
-	//           Number of cycles: <TODO>
+	//           Number of cycles: TODO
 	arm_mult_q15(samples, hamming_window, buf, SAMPLES_PER_MELVEC);
 
 	// STEP 2  : Discrete Fourier Transform
