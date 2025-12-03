@@ -1,0 +1,26 @@
+# system info packet_presence_detection_tb_gen on 2025.12.03.17:01:45
+system_info:
+name,value
+DEVICE,10M16SAU169C8G
+DEVICE_FAMILY,MAX 10
+GENERATION_ID,1764777702
+#
+#
+# Files generated for packet_presence_detection_tb_gen on 2025.12.03.17:01:45
+files:
+filepath,kind,attributes,module,is_top
+simulation/packet_presence_detection_tb_gen.v,VERILOG,,packet_presence_detection_tb_gen,true
+simulation/submodules/packet_presence_detection.sv,SYSTEM_VERILOG,,packet_presence_detection,false
+simulation/submodules/short_shift.v,VERILOG,,packet_presence_detection,false
+simulation/submodules/long_shift.v,VERILOG,,packet_presence_detection,false
+simulation/submodules/altera_avalon_st_splitter.sv,SYSTEM_VERILOG,,altera_avalon_st_splitter,false
+simulation/submodules/altera_reset_controller.v,VERILOG,,altera_reset_controller,false
+simulation/submodules/altera_reset_synchronizer.v,VERILOG,,altera_reset_controller,false
+simulation/submodules/altera_reset_controller.sdc,SDC,,altera_reset_controller,false
+#
+# Map from instance-path to kind of module
+instances:
+instancePath,module
+packet_presence_detection_tb_gen.packet_presence_detection_0,packet_presence_detection
+packet_presence_detection_tb_gen.st_splitter_0,altera_avalon_st_splitter
+packet_presence_detection_tb_gen.rst_controller,altera_reset_controller

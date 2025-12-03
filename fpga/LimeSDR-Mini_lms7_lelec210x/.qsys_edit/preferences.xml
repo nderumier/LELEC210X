@@ -3,7 +3,7 @@
  <debug showDebugMenu="0" />
  <systemtable filter="All Interfaces">
   <columns>
-   <connections preferredWidth="79" />
+   <connections preferredWidth="111" />
    <irq preferredWidth="34" />
    <name preferredWidth="264" />
    <inputclock preferredWidth="95" />
@@ -14,7 +14,7 @@
   </columns>
  </systemtable>
  <library expandedCategories="Project,Library/DSP,Library" />
- <window width="2906" height="1730" x="-13" y="-13" />
+ <window width="2880" height="1704" x="0" y="0" />
  <generation
    path="ip/packet_presence_detection/"
    testbench_system="STANDARD"

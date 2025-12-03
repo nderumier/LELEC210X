@@ -3,50 +3,50 @@ Timing Analyzer Summary
 ------------------------------------------------------------
 
 Type  : Slow 1200mV 85C Model Setup 'RX_C3'
-Slack : 0.412
+Slack : 0.170
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Setup 'FT_CLK'
-Slack : 1.015
+Slack : 0.568
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Setup 'LMK_CLK'
-Slack : 5.720
+Slack : 5.790
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Setup 'ONCHIP_FLASH_CLK'
-Slack : 12.231
-TNS   : 0.000
-
-Type  : Slow 1200mV 85C Model Setup 'DUAL_BOOT_CLK'
-Slack : 18.302
+Slack : 12.744
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Setup 'FPGA_SPI_SCLK_FPGA'
-Slack : 18.431
+Slack : 18.081
+TNS   : 0.000
+
+Type  : Slow 1200mV 85C Model Setup 'DUAL_BOOT_CLK'
+Slack : 18.607
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Setup 'FPGA_SPI_SCLK_out'
-Slack : 31.002
+Slack : 29.457
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Setup 'altera_reserved_tck'
-Slack : 44.979
+Slack : 45.438
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Hold 'LMK_CLK'
-Slack : 0.089
-TNS   : 0.000
-
-Type  : Slow 1200mV 85C Model Hold 'RX_C3'
-Slack : 0.248
+Slack : 0.178
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Hold 'FT_CLK'
-Slack : 0.314
+Slack : 0.286
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Hold 'altera_reserved_tck'
+Slack : 0.346
+TNS   : 0.000
+
+Type  : Slow 1200mV 85C Model Hold 'RX_C3'
 Slack : 0.361
 TNS   : 0.000
 
@@ -55,55 +55,55 @@ Slack : 0.363
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Hold 'DUAL_BOOT_CLK'
-Slack : 1.885
+Slack : 1.740
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Hold 'ONCHIP_FLASH_CLK'
-Slack : 4.549
+Slack : 4.722
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Hold 'FPGA_SPI_SCLK_out'
-Slack : 34.533
+Slack : 35.143
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Recovery 'RX_C3'
-Slack : 0.171
+Slack : 0.160
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Recovery 'FT_CLK'
-Slack : 6.278
+Slack : 6.865
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Recovery 'LMK_CLK'
-Slack : 8.349
+Slack : 7.838
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Recovery 'FPGA_SPI_SCLK_FPGA'
-Slack : 20.880
+Slack : 20.536
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Recovery 'altera_reserved_tck'
-Slack : 97.900
-TNS   : 0.000
-
-Type  : Slow 1200mV 85C Model Removal 'RX_C3'
-Slack : 0.985
-TNS   : 0.000
-
-Type  : Slow 1200mV 85C Model Removal 'FPGA_SPI_SCLK_FPGA'
-Slack : 1.017
-TNS   : 0.000
-
-Type  : Slow 1200mV 85C Model Removal 'altera_reserved_tck'
-Slack : 1.148
+Slack : 97.588
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Removal 'LMK_CLK'
-Slack : 1.836
+Slack : 0.528
+TNS   : 0.000
+
+Type  : Slow 1200mV 85C Model Removal 'FPGA_SPI_SCLK_FPGA'
+Slack : 0.711
+TNS   : 0.000
+
+Type  : Slow 1200mV 85C Model Removal 'altera_reserved_tck'
+Slack : 0.919
+TNS   : 0.000
+
+Type  : Slow 1200mV 85C Model Removal 'RX_C3'
+Slack : 0.993
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Removal 'FT_CLK'
-Slack : 2.093
+Slack : 1.486
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Minimum Pulse Width 'DUAL_BOOT_CLK'
@@ -111,11 +111,11 @@ Slack : 0.000
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Minimum Pulse Width 'LMS_MCLK2'
-Slack : 3.099
+Slack : 1.750
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Minimum Pulse Width 'RX_C3'
-Slack : 3.099
+Slack : 1.750
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Minimum Pulse Width 'LMS_FCLK1'
@@ -139,27 +139,27 @@ Slack : 4.000
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Minimum Pulse Width 'FT_CLK'
-Slack : 4.553
+Slack : 4.560
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Minimum Pulse Width 'LMK_CLK'
-Slack : 10.406
+Slack : 10.423
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Minimum Pulse Width 'ONCHIP_FLASH_CLK'
-Slack : 47.719
-TNS   : 0.000
-
-Type  : Slow 1200mV 85C Model Minimum Pulse Width 'FPGA_SPI_SCLK_FPGA'
-Slack : 49.683
+Slack : 47.888
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Minimum Pulse Width 'altera_reserved_tck'
-Slack : 49.733
+Slack : 49.708
+TNS   : 0.000
+
+Type  : Slow 1200mV 85C Model Minimum Pulse Width 'FPGA_SPI_SCLK_FPGA'
+Slack : 49.709
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Minimum Pulse Width 'FPGA_SPI_SCLK'
-Slack : 49.764
+Slack : 49.790
 TNS   : 0.000
 
 Type  : Slow 1200mV 85C Model Minimum Pulse Width 'FPGA_SPI_SCLK_out'
@@ -167,50 +167,50 @@ Slack : 95.556
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Setup 'RX_C3'
-Slack : 0.873
+Slack : 0.696
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Setup 'FT_CLK'
-Slack : 1.509
+Slack : 1.070
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Setup 'LMK_CLK'
-Slack : 6.104
+Slack : 6.175
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Setup 'ONCHIP_FLASH_CLK'
-Slack : 12.838
-TNS   : 0.000
-
-Type  : Slow 1200mV 0C Model Setup 'DUAL_BOOT_CLK'
-Slack : 18.531
+Slack : 13.387
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Setup 'FPGA_SPI_SCLK_FPGA'
-Slack : 18.710
+Slack : 18.365
+TNS   : 0.000
+
+Type  : Slow 1200mV 0C Model Setup 'DUAL_BOOT_CLK'
+Slack : 18.802
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Setup 'FPGA_SPI_SCLK_out'
-Slack : 31.048
+Slack : 29.647
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Setup 'altera_reserved_tck'
-Slack : 45.189
+Slack : 45.698
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Hold 'LMK_CLK'
-Slack : 0.144
-TNS   : 0.000
-
-Type  : Slow 1200mV 0C Model Hold 'RX_C3'
-Slack : 0.222
+Slack : 0.086
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Hold 'FT_CLK'
-Slack : 0.283
+Slack : 0.261
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Hold 'altera_reserved_tck'
+Slack : 0.307
+TNS   : 0.000
+
+Type  : Slow 1200mV 0C Model Hold 'RX_C3'
 Slack : 0.323
 TNS   : 0.000
 
@@ -219,55 +219,55 @@ Slack : 0.325
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Hold 'DUAL_BOOT_CLK'
-Slack : 1.581
+Slack : 1.507
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Hold 'ONCHIP_FLASH_CLK'
-Slack : 3.966
+Slack : 4.273
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Hold 'FPGA_SPI_SCLK_out'
-Slack : 34.441
+Slack : 34.911
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Recovery 'RX_C3'
-Slack : 0.287
+Slack : 0.198
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Recovery 'FT_CLK'
-Slack : 6.457
+Slack : 7.033
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Recovery 'LMK_CLK'
-Slack : 8.642
+Slack : 8.130
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Recovery 'FPGA_SPI_SCLK_FPGA'
-Slack : 21.003
+Slack : 20.637
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Recovery 'altera_reserved_tck'
-Slack : 98.022
-TNS   : 0.000
-
-Type  : Slow 1200mV 0C Model Removal 'FPGA_SPI_SCLK_FPGA'
-Slack : 0.749
-TNS   : 0.000
-
-Type  : Slow 1200mV 0C Model Removal 'RX_C3'
-Slack : 0.902
-TNS   : 0.000
-
-Type  : Slow 1200mV 0C Model Removal 'altera_reserved_tck'
-Slack : 1.067
+Slack : 97.730
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Removal 'LMK_CLK'
-Slack : 1.647
+Slack : 0.431
+TNS   : 0.000
+
+Type  : Slow 1200mV 0C Model Removal 'FPGA_SPI_SCLK_FPGA'
+Slack : 0.476
+TNS   : 0.000
+
+Type  : Slow 1200mV 0C Model Removal 'altera_reserved_tck'
+Slack : 0.839
+TNS   : 0.000
+
+Type  : Slow 1200mV 0C Model Removal 'RX_C3'
+Slack : 0.915
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Removal 'FT_CLK'
-Slack : 1.865
+Slack : 1.325
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'DUAL_BOOT_CLK'
@@ -275,11 +275,15 @@ Slack : 0.000
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'LMS_MCLK2'
-Slack : 2.932
+Slack : 1.750
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'RX_C3'
-Slack : 3.099
+Slack : 1.750
+TNS   : 0.000
+
+Type  : Slow 1200mV 0C Model Minimum Pulse Width 'TX_C0'
+Slack : 3.542
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'LMS_FCLK1'
@@ -294,36 +298,32 @@ Type  : Slow 1200mV 0C Model Minimum Pulse Width 'RX_C2'
 Slack : 3.556
 TNS   : 0.000
 
-Type  : Slow 1200mV 0C Model Minimum Pulse Width 'TX_C0'
-Slack : 3.556
-TNS   : 0.000
-
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'LMS_MCLK1'
 Slack : 4.000
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'FT_CLK'
-Slack : 4.571
+Slack : 4.574
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'LMK_CLK'
-Slack : 10.452
+Slack : 10.463
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'ONCHIP_FLASH_CLK'
-Slack : 47.647
+Slack : 47.897
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'FPGA_SPI_SCLK_FPGA'
-Slack : 49.560
+Slack : 49.498
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'FPGA_SPI_SCLK'
-Slack : 49.699
+Slack : 49.649
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'altera_reserved_tck'
-Slack : 49.735
+Slack : 49.681
 TNS   : 0.000
 
 Type  : Slow 1200mV 0C Model Minimum Pulse Width 'FPGA_SPI_SCLK_out'
@@ -331,107 +331,107 @@ Slack : 95.556
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Setup 'RX_C3'
-Slack : 1.003
+Slack : 1.248
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Setup 'FT_CLK'
-Slack : 2.182
+Slack : 2.044
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Setup 'LMK_CLK'
-Slack : 8.778
+Slack : 9.091
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Setup 'ONCHIP_FLASH_CLK'
-Slack : 19.935
+Slack : 20.279
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Setup 'DUAL_BOOT_CLK'
-Slack : 21.728
+Slack : 21.816
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Setup 'FPGA_SPI_SCLK_FPGA'
-Slack : 22.068
+Slack : 21.910
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Setup 'FPGA_SPI_SCLK_out'
-Slack : 33.654
+Slack : 32.610
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Setup 'altera_reserved_tck'
-Slack : 48.040
+Slack : 48.342
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Hold 'LMK_CLK'
-Slack : -0.162
-TNS   : -0.234
-
-Type  : Fast 1200mV 0C Model Hold 'RX_C3'
-Slack : 0.070
-TNS   : 0.000
+Slack : -0.036
+TNS   : -0.036
 
 Type  : Fast 1200mV 0C Model Hold 'FT_CLK'
-Slack : 0.111
+Slack : 0.101
+TNS   : 0.000
+
+Type  : Fast 1200mV 0C Model Hold 'altera_reserved_tck'
+Slack : 0.145
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Hold 'FPGA_SPI_SCLK_FPGA'
 Slack : 0.152
 TNS   : 0.000
 
-Type  : Fast 1200mV 0C Model Hold 'altera_reserved_tck'
+Type  : Fast 1200mV 0C Model Hold 'RX_C3'
 Slack : 0.152
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Hold 'DUAL_BOOT_CLK'
-Slack : 0.538
+Slack : 0.430
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Hold 'ONCHIP_FLASH_CLK'
-Slack : 0.778
+Slack : 0.786
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Hold 'FPGA_SPI_SCLK_out'
-Slack : 34.880
+Slack : 35.100
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Recovery 'RX_C3'
-Slack : 2.487
+Slack : 2.610
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Recovery 'FT_CLK'
-Slack : 8.379
+Slack : 8.605
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Recovery 'LMK_CLK'
-Slack : 10.855
+Slack : 10.581
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Recovery 'FPGA_SPI_SCLK_FPGA'
-Slack : 23.007
+Slack : 22.868
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Recovery 'altera_reserved_tck'
-Slack : 99.022
+Slack : 98.926
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Removal 'FPGA_SPI_SCLK_FPGA'
-Slack : 0.302
-TNS   : 0.000
-
-Type  : Fast 1200mV 0C Model Removal 'RX_C3'
-Slack : 0.409
-TNS   : 0.000
-
-Type  : Fast 1200mV 0C Model Removal 'altera_reserved_tck'
-Slack : 0.470
+Slack : 0.105
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Removal 'LMK_CLK'
-Slack : 0.746
+Slack : 0.327
+TNS   : 0.000
+
+Type  : Fast 1200mV 0C Model Removal 'altera_reserved_tck'
+Slack : 0.395
+TNS   : 0.000
+
+Type  : Fast 1200mV 0C Model Removal 'RX_C3'
+Slack : 0.414
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Removal 'FT_CLK'
-Slack : 0.863
+Slack : 0.601
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'DUAL_BOOT_CLK'
@@ -439,19 +439,19 @@ Slack : 0.000
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'LMS_MCLK2'
-Slack : 3.053
+Slack : 2.946
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'RX_C3'
-Slack : 3.626
-TNS   : 0.000
-
-Type  : Fast 1200mV 0C Model Minimum Pulse Width 'TX_C0'
-Slack : 3.631
+Slack : 3.522
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'RX_C2'
-Slack : 3.656
+Slack : 3.559
+TNS   : 0.000
+
+Type  : Fast 1200mV 0C Model Minimum Pulse Width 'TX_C0'
+Slack : 3.574
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'LMS_FCLK1'
@@ -471,23 +471,23 @@ Slack : 4.261
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'LMK_CLK'
-Slack : 10.108
+Slack : 10.241
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'ONCHIP_FLASH_CLK'
-Slack : 47.927
+Slack : 47.966
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'FPGA_SPI_SCLK_FPGA'
-Slack : 49.632
+Slack : 49.624
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'altera_reserved_tck'
-Slack : 49.695
+Slack : 49.700
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'FPGA_SPI_SCLK'
-Slack : 49.943
+Slack : 49.854
 TNS   : 0.000
 
 Type  : Fast 1200mV 0C Model Minimum Pulse Width 'FPGA_SPI_SCLK_out'

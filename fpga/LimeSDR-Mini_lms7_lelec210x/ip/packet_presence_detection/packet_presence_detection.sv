@@ -213,11 +213,11 @@ module dual_running_sum #(
 	// ------------------- TO DO : START -------------------
 	// ------------------- TO DO : START -------------------
 
-	always @(possedge clock ) begin 
-		long_shift_rescale <= (K*long_sum_reg);
+	always @(posedge clock) begin 
+		long_shift_rescale <= K*long_sum_reg;
 	end 
 
-	assign short_sum_rescale  = (short_sum_reg << 6);
+	assign short_sum_rescale  = short_sum_reg << 6;
 	// ------------------- TO DO : END   -------------------
 	
 	// ------------------- TO DO : END   -------------------
