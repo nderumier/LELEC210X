@@ -47,7 +47,11 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
+<<<<<<< HEAD
     coordinate: [1104, 236.0]
+=======
+    coordinate: [1208, 268.0]
+>>>>>>> upstream/main
     rotation: 0
     state: true
 - name: Enable_detection
@@ -100,6 +104,18 @@ blocks:
     coordinate: [1056, 276.0]
     rotation: 0
     state: disabled
+- name: N_Moose
+  id: variable
+  parameters:
+    comment: ''
+    value: '2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [552, 204.0]
+    rotation: 0
+    state: true
 - name: Print_metrics
   id: variable_qtgui_check_box
   parameters:
@@ -235,6 +251,18 @@ blocks:
     coordinate: [1336, 212.0]
     rotation: 0
     state: true
+- name: oversampling
+  id: variable
+  parameters:
+    comment: ''
+    value: '8'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [544, 124.0]
+    rotation: 0
+    state: true
 - name: packet_len
   id: variable
   parameters:
@@ -296,7 +324,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: data_rate*8
+    value: data_rate*oversampling
   states:
     bus_sink: false
     bus_source: false
@@ -369,6 +397,7 @@ blocks:
     coordinate: [712, 404.0]
     rotation: 0
     state: enabled
+<<<<<<< HEAD
 - name: fsk_flag_detector_0
   id: fsk_flag_detector
   parameters:
@@ -388,6 +417,8 @@ blocks:
     coordinate: [144, 396.0]
     rotation: 0
     state: true
+=======
+>>>>>>> upstream/main
 - name: fsk_onQuery_noise_estimation_0
   id: fsk_onQuery_noise_estimation
   parameters:
@@ -398,7 +429,11 @@ blocks:
     minoutbuf: '0'
     n_est: '10'
     n_samples: '1024'
+<<<<<<< HEAD
     osr: '8'
+=======
+    osr: oversampling
+>>>>>>> upstream/main
     query: noiseQuery
   states:
     bus_sink: false
@@ -415,7 +450,11 @@ blocks:
     alias: ''
     comment: ''
     crc_len: crc_len
+<<<<<<< HEAD
     enable_log: '1'
+=======
+    enable_log: Print_metrics
+>>>>>>> upstream/main
     hdr_len: hdr_len
     log_payload: Print_payload
     maxoutbuf: '0'
@@ -432,6 +471,10 @@ blocks:
   id: fsk_synchronization
   parameters:
     Grx: rx_gain
+<<<<<<< HEAD
+=======
+    N_Moose: N_Moose
+>>>>>>> upstream/main
     affinity: ''
     alias: ''
     comment: ''
@@ -450,6 +493,24 @@ blocks:
     coordinate: [456, 396.0]
     rotation: 0
     state: enabled
+- name: limesdr_fpga_flag_detector_0
+  id: limesdr_fpga_flag_detector
+  parameters:
+    affinity: ''
+    alias: ''
+    burst_len: 8*oversampling*(packet_len+1) + oversampling
+    comment: ''
+    enable: Enable_detection
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    threshold: '0.99'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [112, 396.0]
+    rotation: 0
+    state: true
 - name: limesdr_fpga_source_0
   id: limesdr_fpga_source
   parameters:
@@ -554,15 +615,20 @@ blocks:
     state: enabled
 
 connections:
-- [dc_blocker_xx_0, '0', fsk_flag_detector_0, '0']
 - [dc_blocker_xx_0, '0', fsk_onQuery_noise_estimation_0, '0']
+- [dc_blocker_xx_0, '0', limesdr_fpga_flag_detector_0, '0']
 - [dc_blocker_xx_0, '0', qtgui_sink_x_0, '0']
 - [fsk_demodulation_0, '0', fsk_packet_parser_0, '0']
+<<<<<<< HEAD
 - [fsk_flag_detector_0, '0', fsk_synchronization_0, '0']
 - [fsk_flag_detector_0, SignalPow, fsk_synchronization_0, SignalPow]
+=======
+>>>>>>> upstream/main
 - [fsk_onQuery_noise_estimation_0, NoisePow, fsk_synchronization_0, NoisePow]
 - [fsk_packet_parser_0, '0', zeromq_pub_sink_0, '0']
 - [fsk_synchronization_0, '0', fsk_demodulation_0, '0']
+- [limesdr_fpga_flag_detector_0, '0', fsk_synchronization_0, '0']
+- [limesdr_fpga_flag_detector_0, SignalPow, fsk_synchronization_0, SignalPow]
 - [limesdr_fpga_source_0, '0', dc_blocker_xx_0, '0']
 
 metadata:
