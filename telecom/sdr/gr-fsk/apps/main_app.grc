@@ -47,11 +47,8 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-<<<<<<< HEAD
-    coordinate: [1104, 236.0]
-=======
+
     coordinate: [1208, 268.0]
->>>>>>> upstream/main
     rotation: 0
     state: true
 - name: Enable_detection
@@ -397,28 +394,6 @@ blocks:
     coordinate: [712, 404.0]
     rotation: 0
     state: enabled
-<<<<<<< HEAD
-- name: fsk_flag_detector_0
-  id: fsk_flag_detector
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    drate: data_rate
-    enable: Enable_detection
-    fsamp: samp_rate
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    packet_len: packet_len
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [144, 396.0]
-    rotation: 0
-    state: true
-=======
->>>>>>> upstream/main
 - name: fsk_onQuery_noise_estimation_0
   id: fsk_onQuery_noise_estimation
   parameters:
@@ -429,11 +404,7 @@ blocks:
     minoutbuf: '0'
     n_est: '10'
     n_samples: '1024'
-<<<<<<< HEAD
-    osr: '8'
-=======
     osr: oversampling
->>>>>>> upstream/main
     query: noiseQuery
   states:
     bus_sink: false
@@ -450,11 +421,7 @@ blocks:
     alias: ''
     comment: ''
     crc_len: crc_len
-<<<<<<< HEAD
-    enable_log: '1'
-=======
     enable_log: Print_metrics
->>>>>>> upstream/main
     hdr_len: hdr_len
     log_payload: Print_payload
     maxoutbuf: '0'
@@ -471,10 +438,7 @@ blocks:
   id: fsk_synchronization
   parameters:
     Grx: rx_gain
-<<<<<<< HEAD
-=======
     N_Moose: N_Moose
->>>>>>> upstream/main
     affinity: ''
     alias: ''
     comment: ''
@@ -619,11 +583,6 @@ connections:
 - [dc_blocker_xx_0, '0', limesdr_fpga_flag_detector_0, '0']
 - [dc_blocker_xx_0, '0', qtgui_sink_x_0, '0']
 - [fsk_demodulation_0, '0', fsk_packet_parser_0, '0']
-<<<<<<< HEAD
-- [fsk_flag_detector_0, '0', fsk_synchronization_0, '0']
-- [fsk_flag_detector_0, SignalPow, fsk_synchronization_0, SignalPow]
-=======
->>>>>>> upstream/main
 - [fsk_onQuery_noise_estimation_0, NoisePow, fsk_synchronization_0, NoisePow]
 - [fsk_packet_parser_0, '0', zeromq_pub_sink_0, '0']
 - [fsk_synchronization_0, '0', fsk_demodulation_0, '0']
