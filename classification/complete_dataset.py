@@ -2,11 +2,11 @@ import os
 import time
 import soundfile as sf
 import sounddevice as sd
-
+import csv
 # -------------------------------------------------------
 # CONFIGURATION
 # -------------------------------------------------------
-DATASET_DIR = "classification\\src\\classification\\datasets\\soundfiles"        # Path to your dataset root folder
+DATASET_DIR = "classification\\data\\test_audio_files"        # Path to your dataset root folder
 DELAY_BETWEEN_SOUNDS = 0    # Seconds to wait after playing (time to push button)
 EXTENSIONS = ('.wav')       # Audio extensions to look for
 
@@ -14,7 +14,7 @@ EXTENSIONS = ('.wav')       # Audio extensions to look for
 # Examples: ["fire"] or ["bird", "chain"] or ["chainsaw_01"]
 # Leave empty [] to play ALL files.
 FILTER_PREFIXES = ["fire", "birds", "chainsaw","handsaw", "helicopter"] 
-
+CSV_FILENAME = "classification\\played_files_log.csv"
 def play_dataset_sequentially():
     # Convert to absolute path for clarity in debug
     abs_dataset_dir = os.path.abspath(DATASET_DIR)
@@ -67,34 +67,57 @@ def play_dataset_sequentially():
     time.sleep(3)
 
     total_count = 0
+    with open(CSV_FILENAME, mode='w', newline='', encoding='utf-8') as csv_file:
+            writer = csv.writer(csv_file)
+            # Write Header
+            writer.writerow(["Index", "Filename", "Prefix (Class)", "Full Path"])
 
-    if mode == "nested":
-        for class_name in classes:
-            class_path = os.path.join(DATASET_DIR, class_name)
-            files = [f for f in os.listdir(class_path) if f.lower().endswith(EXTENSIONS)]
-            
-            # Apply filter to nested files
-            if FILTER_PREFIXES:
-                files = [f for f in files if any(f.lower().startswith(p.lower()) for p in FILTER_PREFIXES)]
-            
-            files.sort()
+            if mode == "nested":
+                for class_name in classes:
+                    class_path = os.path.join(DATASET_DIR, class_name)
+                    files = [f for f in os.listdir(class_path) if f.lower().endswith(EXTENSIONS)]
+                    if FILTER_PREFIXES:
+                        files = [f for f in files if any(f.lower().startswith(p.lower()) for p in FILTER_PREFIXES)]
+                    files.sort()
 
-            if not files:
-                continue
+                    if not files: continue
 
-            print(f"\n--- 📂 Entering Class: {class_name} ({len(files)} files) ---")
-            
-            for filename in files:
-                total_count += 1
-                play_audio_file(os.path.join(class_path, filename), filename, total_count)
+                    print(f"\n--- 📂 Entering Class: {class_name} ---")
+                    
+                    for filename in files:
+                        total_count += 1
+                        full_path = os.path.join(class_path, filename)
+                        
+                        # 1. PLAY
+                        play_audio_file(full_path, filename, total_count)
+                        
+                        # 2. LOG TO CSV (Prefix = Folder Name)
+                        prefix = class_name
+                        writer.writerow([total_count, filename, prefix, full_path])
+                        csv_file.flush() # Save immediately
 
-    elif mode == "flat":
-        print(f"\n--- 📂 Playing matching files in root directory ---")
-        for filename in flat_files:
-            total_count += 1
-            play_audio_file(os.path.join(DATASET_DIR, filename), filename, total_count)
+            elif mode == "flat":
+                print(f"\n--- 📂 Playing files in root directory ---")
+                for filename in flat_files:
+                    total_count += 1
+                    full_path = os.path.join(DATASET_DIR, filename)
 
-    print(f"\n✅ Sequence finished. Played {total_count} files.")
+                    # 1. PLAY
+                    play_audio_file(full_path, filename, total_count)
+                    
+                    # 2. LOG TO CSV (Prefix = First part of filename before '_')
+                    # Example: "chainsaw_01.wav" -> "chainsaw"
+                    prefix = filename.split('_')[0] 
+                    
+                    # NOTE: If you want to MANUALLY type the prefix while listening, 
+                    # uncomment the line below and comment out the line above:
+                    # prefix = input(f"   ⌨️  Enter prefix for {filename}: ")
+
+                    writer.writerow([total_count, filename, prefix, full_path])
+                    csv_file.flush() # Save immediately
+
+            print(f"\n✅ Sequence finished. Played {total_count} files.")
+            print(f"📝 Log saved to {CSV_FILENAME}")
 
 def play_audio_file(file_path, filename, count):
     print(f"[{count}] ▶️  Playing: {filename} ... ", end="", flush=True)
