@@ -38,7 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ADC_BUF_SIZE 10000
+#define ADC_BUF_SIZE 50000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -79,8 +79,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 }
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc){
 	if(hadc -> Instance == ADC1){
-//		uint32_t power = get_signal_power((uint16_t*)ADCData2, ADC_BUF_SIZE);
-//		printf("Power2: %lu\r\n", power);
+		uint32_t power = get_signal_power((uint16_t*)ADCData2, ADC_BUF_SIZE);
+		printf("Power2: %lu\r\n", power);
 //		if (power > 50){
 		HAL_ADC_Stop_DMA(&hadc1);
 		HAL_TIM_Base_Stop(&htim3);
@@ -99,8 +99,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc){
 //		uint32_t power = get_signal_power((uint16_t*)ADCData1, ADC_BUF_SIZE);
 //		printf("Power1: %lu\r\n", power);
 //		if (power > 50){
-////			HAL_ADC_Stop_DMA(&hadc1);
-////			HAL_TIM_Base_Stop(&htim3);
+//			HAL_ADC_Stop_DMA(&hadc1);
+//			HAL_TIM_Base_Stop(&htim3);
 //			print_buffer((uint16_t *)ADCBuffer);
 //		}
 //	}
@@ -175,23 +175,23 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-//	HAL_Delay(500);
-//	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-//	HAL_Delay(500);
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+	HAL_Delay(500);
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	HAL_Delay(500);
 
 	  /* code to recuperate tension value of sound*/
-//	  if (state) {
-//	              state = 0;
-//
-//	              HAL_ADC_Start(&hadc1);
-//	              if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK) {
-//	                  uint32_t value = HAL_ADC_GetValue(&hadc1);
-//	                  printf("SND:%lu\r\n", value);
-//	              }
-//	              HAL_ADC_Stop(&hadc1);
-//	          }
-//	      }
+	  if (state) {
+	              state = 0;
+
+	              HAL_ADC_Start(&hadc1);
+	              if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK) {
+	                  uint32_t value = HAL_ADC_GetValue(&hadc1);
+	                  printf("SND:%lu\r\n", value);
+	              }
+	              HAL_ADC_Stop(&hadc1);
+	          }
+	      }
 
 	  /*code to sample data*/
 	  if (state){
@@ -207,7 +207,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
-}
+
 
 /**
   * @brief System Clock Configuration

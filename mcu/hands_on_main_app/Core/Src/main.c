@@ -95,28 +95,55 @@ static void acquire_and_send_packet() {
 void run(void)
 {
 	btn_press = 0;
-
 	while (1)
-	{
-	  while (!btn_press) {
-		  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
-		  HAL_Delay(200);
-		  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_RESET);
-		  HAL_Delay(200);
-	  }
-	  btn_press = 0;
-#if (CONTINUOUS_ACQ == 1)
-	  while (!btn_press) {
-		  acquire_and_send_packet();
-	  }
-	  btn_press = 0;
-#elif (CONTINUOUS_ACQ == 0)
-	  acquire_and_send_packet();
-#else
-#error "Wrong value for CONTINUOUS_ACQ."
-#endif
-	}
+	    {
+	        /* ==============================
+	         * Sleep until button is pressed
+	         * ============================== */
+	        while (!btn_press) {
+	            __WFI();   // CPU sleeps here
+	        }
+
+	        /* Button was pressed */
+	        btn_press = 0;
+
+	        /* ==============================
+	         * Do ONE acquisition
+	         * ============================== */
+	        acquire_and_send_packet();
+
+	        /* ==============================
+	         * Go back to sleep
+	         * ============================== */
+	        __WFI();
+	    }
+
+//	while (1)
+//	{
+//	  while (!btn_press) {
+//		  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
+//		  HAL_Delay(1000);
+//		  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_RESET);
+//		  HAL_Delay(1000);
+//		  __WFI();
+//	  }
+//	  btn_press = 0;
+//#if (CONTINUOUS_ACQ == 1)
+//	  while (!btn_press) {
+//		  acquire_and_send_packet();
+//	  }
+//	  btn_press = 0;
+//#elif (CONTINUOUS_ACQ == 0)
+//
+//	  acquire_and_send_packet();
+//
+//	 /* Sleep after acquisition & send */
+//#else
+//#error "Wrong value for CONTINUOUS_ACQ."
+//#endif
+//	}
 }
+
 
 /* USER CODE END 0 */
 
@@ -221,7 +248,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_11;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_9;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -237,7 +264,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }

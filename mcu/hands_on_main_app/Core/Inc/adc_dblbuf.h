@@ -7,7 +7,7 @@
 
 // ADC parameters
 #define ADC_BUF_SIZE SAMPLES_PER_MELVEC
-
+//#define ADC_BUF_SIZE 2560
 
 int StartADCAcq(int32_t n_bufs);
 int IsADCFinished(void);

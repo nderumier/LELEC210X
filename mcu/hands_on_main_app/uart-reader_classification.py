@@ -2,7 +2,7 @@
 uart-reader.py
 ELEC PROJECT - 210x
 put ground truth.csv in same folder as uart-reader.py
-run command : python uart-reader.py -p COM3 -g ground_truth.csv
+run command : python uart-reader.py  
 """
 
 import argparse
@@ -14,6 +14,11 @@ import serial
 import pandas as pd
 from serial.tools import list_ports
 from sklearn.metrics import accuracy_score, confusion_matrix
+
+import cv2
+import numpy as np
+
+
 
 # Ensure you have the plot utils in your path, or comment this out if testing without it
 # from classification.utils.plots import plot_specgram
@@ -126,9 +131,6 @@ if __name__ == "__main__":
             model = clf
             pca = None
 
-        dataset_dir = r"C:\Users\natha\Documents\Master1\Q1\LELEC2102_-_Project_in_Electrical_Engineering_Integratio_of_wireles_embedded_sensing_systems\New_dataset"
-        os.makedirs(dataset_dir, exist_ok=True)
-
         X_save = []   # feature vectors
         y_save = []   # predicted classes
         print("Model loaded.\n")
@@ -141,7 +143,27 @@ if __name__ == "__main__":
             feat = melvec.reshape(-1).astype(float)
 
             # Flatten into 1D vector
-            feature_vector = melvec.reshape(-1).astype(float)
+            #feature_vector = melvec.reshape(-1).astype(float)
+
+
+            TARGET_SHAPE = (20, 20)
+
+            # -------------------------------------------------------
+            # HELPER: Feature Extraction with Forced Resize
+            # -------------------------------------------------------
+            def get_fixed_feature(melvec):
+                # Retrieve the spectrogram (2D array)   
+                feat2d = melvec
+                
+                # If the shape is not 20x20 (e.g. it is 20x107), force resize it
+                if feat2d.shape != TARGET_SHAPE:
+                    # mode='reflect' handles borders smoothly, anti_aliasing prevents artifacts
+                    feat2d = cv2.resize(feat2d,(TARGET_SHAPE[1], TARGET_SHAPE[0]),interpolation=cv2.INTER_AREA)
+                    
+                # Flatten to 1D vector (length 400)
+                return feat2d.reshape(-1)
+
+            feature_vector = get_fixed_feature(melvec)
 
             # Normalisation (Using user's logic)
             norm_val = np.linalg.norm(feature_vector)
@@ -149,14 +171,16 @@ if __name__ == "__main__":
                 norm_val = 1e-9 # Avoid div by zero
             feature_norm = feature_vector / norm_val
 
+
+            
             # PCA transform
-            if pca:
-                feature_pca = pca.transform([feature_norm])
-            else:
-                feature_pca = [feature_norm]
+            # if pca:
+            #     feature_pca = pca.transform([feature_norm])
+            # else:
+            #     feature_pca = [feature_norm]
 
             # Prediction
-            prediction = model.predict(feature_pca)[0]
+            prediction = model.predict(feature_norm)[0]
             print(f"Predicted class: {prediction}")
 
             # --- COMPARISON LOGIC ---
@@ -202,21 +226,21 @@ if __name__ == "__main__":
             X_save.append(feat)
             y_save.append(prediction)
 
-            if msg_counter % 10 == 0:
-                np.save(os.path.join(dataset_dir, "feature_vectors.npy"), np.array(X_save))
-                np.save(os.path.join(dataset_dir, "labels.npy"), np.array(y_save))
-                print(f"💾 Saved {msg_counter} samples so far...")
+            # if msg_counter % 10 == 0:
+            #     np.save(os.path.join(dataset_dir, "feature_vectors.npy"), np.array(X_save))
+            #     np.save(os.path.join(dataset_dir, "labels.npy"), np.array(y_save))
+            #     print(f"💾 Saved {msg_counter} samples so far...")
 
 
             # ----- PLOTTING -----
-            plt.figure(1)
-            plot_specgram(
-                melvec.reshape((N_MELVECS, MELVEC_LENGTH)).T,
-                ax=plt.gca(),
-                is_mel=True,
-                title=f"MEL Spectrogram #{msg_counter} (Pred: {prediction})",
-                xlabel="Mel vector",
-            )
-            plt.draw()
-            plt.pause(0.001)
-            plt.clf()
+            # plt.figure(1)
+            # plot_specgram(
+            #     melvec.reshape((N_MELVECS, MELVEC_LENGTH)).T,
+            #     ax=plt.gca(),
+            #     is_mel=True,
+            #     title=f"MEL Spectrogram #{msg_counter} (Pred: {prediction})",
+            #     xlabel="Mel vector",
+            # )
+            # plt.draw()
+            # plt.pause(0.001)
+            # plt.clf()

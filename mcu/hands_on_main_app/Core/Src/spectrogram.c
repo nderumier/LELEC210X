@@ -22,7 +22,7 @@ void Spectrogram_Format(q15_t *buf)
 	// STEP 0.1 : Increase fixed-point scale
 	//            --> Pointwise shift
 	//            Complexity: O(N)
-	//            Number of cycles: <TODO>
+	//            Number of cycles: 3661
 
 	// The output of the ADC is stored in an unsigned 12-bit format, so buf[i] is in [0 , 2**12 - 1]
 	// In order to better use the scale of the signed 16-bit format (1 bit of sign and 15 integer bits), we can multiply by 2**(15-12) = 2**3
@@ -30,18 +30,16 @@ void Spectrogram_Format(q15_t *buf)
 
 	// /!\ When multiplying/dividing by a power 2, always prefer shifting left/right instead, ARM instructions to do so are more efficient.
 	// Here we should shift left by 3.
-	start_cycle_count();
 	arm_shift_q15(buf, 3, buf, SAMPLES_PER_MELVEC);
-	stop_cycle_count("Spectrogram_Compute");
+
 
 	// STEP 0.2 : Remove DC Component
 	//            --> Pointwise substract
 	//            Complexity: O(N)
-	//            Number of cycles: <TODO>
+	//            Number of cycles: 15912
 
 	// Since we use a signed representation, we should now center the value around zero, we can do this by substracting 2**14.
 	// Now the value of buf[i] is in [-2**14 , 2**14 - 1]
-
 	for(uint16_t i=0; i < SAMPLES_PER_MELVEC; i++) { // Remove DC component
 		buf[i] -= (1 << 14);
 	}
@@ -53,14 +51,14 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	// STEP 1  : Windowing of input samples
 	//           --> Pointwise product
 	//           Complexity: O(N)
-	//           Number of cycles: TODO
+	//           Number of cycles: 3925
 	arm_mult_q15(samples, hamming_window, buf, SAMPLES_PER_MELVEC);
 
 	// STEP 2  : Discrete Fourier Transform
 	//           --> In-place Fast Fourier Transform (FFT) on a real signal
 	//           --> For our spectrogram, we only keep only positive frequencies (symmetry) in the next operations.
 	//           Complexity: O(Nlog(N))
-	//           Number of cycles: <TODO>
+	//           Number of cycles: 23156
 
 	// Since the FFT is a recursive algorithm, the values are rescaled in the function to ensure that overflow cannot happen.
 	arm_rfft_instance_q15 rfft_inst;
@@ -76,7 +74,7 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 
 	// STEP 3.1: Find the extremum value (maximum of absolute values)
 	//           Complexity: O(N)
-	//           Number of cycles: <TODO>
+	//           Number of cycles: 16858
 
 	q15_t vmax;
 	uint32_t pIndex=0;
@@ -85,7 +83,7 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 
 	// STEP 3.2: Normalize the vector - Dynamic range increase
 	//           Complexity: O(N)
-	//           Number of cycles: <TODO>
+	//           Number of cycles: 15588
 
 	for (int i=0; i < SAMPLES_PER_MELVEC; i++) // We don't use the second half of the symmetric spectrum
 	{
@@ -95,13 +93,13 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	// STEP 3.3: Compute the complex magnitude
 	//           --> The output buffer is now two times smaller because (real|imag) --> (mag)
 	//           Complexity: O(N)
-	//           Number of cycles: <TODO>
+	//           Number of cycles: 12526
 
 	arm_cmplx_mag_q15(buf, buf, SAMPLES_PER_MELVEC/2);
 
 	// STEP 3.4: Denormalize the vector
 	//           Complexity: O(N)
-	//           Number of cycles: <TODO>
+	//           Number of cycles: 6439
 
 	for (int i=0; i < SAMPLES_PER_MELVEC/2; i++)
 	{
@@ -111,7 +109,7 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	// STEP 4:   Apply MEL transform
 	//           --> Fast Matrix Multiplication
 	//           Complexity: O(Nmel*N)
-	//           Number of cycles: <TODO>
+	//           Number of cycles: 20890
 
 	// /!\ The difference between the function arm_mat_mult_q15() and the fast variant is that the fast variant use a 32-bit rather than a 64-bit accumulator.
 	// The result of each 1.15 x 1.15 multiplication is truncated to 2.30 format. These intermediate results are accumulated in a 32-bit register in 2.30 format.
