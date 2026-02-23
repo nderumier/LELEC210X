@@ -40,8 +40,9 @@ classnames = dataset.list_classes()
 # -------------------------------------------------------
 
 dataset.remove_class("background")
-dataset.remove_class("fireworks")
-dataset.remove_class("gunshot")
+dataset.remove_class("handsaw")
+dataset.remove_class("birds")
+dataset.remove_class("helicopter")
 classnames = dataset.list_classes()
 
 print("\n".join(classnames))
@@ -113,7 +114,7 @@ for classname in classnames:
     indices = np.arange(n_audio)
     
     # 2. Split indices (Prevents Data Leakage)
-    train_idx, test_idx = train_test_split(indices, test_size=0.2, random_state=42)
+    train_idx, test_idx = train_test_split(indices, test_size=0.3, random_state=42)
     
     # --- PROCESS TRAINING DATA ---
     myds.mod_data_aug(train_aug_list) 
@@ -221,8 +222,8 @@ print(f"Test shape  : {X_test.shape}")
 # -------------------------------------------------------
 
 # Mélange des données
-X_train, y_train = shuffle(X_train, y_train, random_state=0)
-X_test, y_test = shuffle(X_test, y_test, random_state=0)
+X_train, y_train = shuffle(X_train, y_train, random_state=1)
+X_test, y_test = shuffle(X_test, y_test, random_state=1)
 
 # Normalisation
 scaler = StandardScaler()
@@ -230,7 +231,7 @@ X_train_norm = scaler.fit_transform(X_train)
 X_test_norm  = scaler.transform(X_test)
 
 # PCA
-pca = PCA(n_components=0.8, random_state=0)  # garde 85 % de la variance
+pca = PCA(n_components=0.8, random_state=1)  # garde 85 % de la variance
 X_train_pca = pca.fit_transform(X_train_norm)
 X_test_pca  = pca.transform(X_test_norm)
 
@@ -241,7 +242,7 @@ print("✔ Dimension après PCA :", X_train_pca.shape)
 # PARTIE 3 — Entraînement du modèle SVM
 # -------------------------------------------------------
 
-model = SVC(kernel="linear", C=0.01, gamma=0.01, class_weight="balanced",probability=True, random_state=0)
+model = SVC(kernel="rbf", C=4.281, gamma=0.0002, class_weight="balanced",probability=True, random_state=1)
 model.fit(X_train_pca, y_train)
 
 print("✔ Modèle entraîné !")
