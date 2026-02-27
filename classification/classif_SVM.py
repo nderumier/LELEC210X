@@ -176,7 +176,7 @@ else:
 # -------------------------------------------------------
 
 fm_dir = "data/feature_matrices/"
-model_dir = "data/models/"
+model_dir = "C:\\Users\\tvang\\LELEC210X\\classification\\"  # where to save the models
 
 os.makedirs(fm_dir, exist_ok=True)
 os.makedirs(model_dir, exist_ok=True)
@@ -257,14 +257,14 @@ show_confusion_matrix(y_train_test, y_train, classnames)
 # PARTIE 4 — Sauvegarde du modèle complet
 # -------------------------------------------------------
 
-model_filename = "model_audio_svm_V1.pickle"
+model_filename = "model_audio_svm_test.pickle"
 
 with open(model_dir + model_filename, "wb") as f:
     pickle.dump({"scaler": scaler, "pca": pca, "model": model}, f)
 
 print("✔ Modèle sauvegardé dans :", model_dir + model_filename)
 
-
+print("Saving to absolute path:", os.path.abspath(model_dir + model_filename))
 # -------------------------------------------------------
 # PARTIE 5 — Évaluation
 # -------------------------------------------------------
