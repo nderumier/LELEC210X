@@ -8,6 +8,7 @@ import sounddevice as sd
 import soundfile as sf
 from numpy import ndarray
 from scipy.signal import fftconvolve
+import scipy.signal
 
 # -----------------------------------------------------------------------------
 """
@@ -66,7 +67,7 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        resig = signal.resample(sig, int(len(sig) * newsr / sr))
+        resig = scipy.signal.resample(sig, int(len(sig) * newsr / sr))
 
         return (resig, newsr)
 
