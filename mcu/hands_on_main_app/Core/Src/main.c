@@ -39,22 +39,18 @@
 #include "config.h"
 #include "utils.h"
 #include "usart.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -68,7 +64,6 @@ volatile uint8_t btn_press;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -77,73 +72,42 @@ void SystemClock_Config(void);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == B1_Pin) {
+		/* Keep as optional debug/manual trigger (not required for contest mode) */
 		btn_press = 1;
 	}
 	else if (GPIO_Pin == RADIO_INT_Pin)
 		S2LP_IRQ_Handler();
 }
 
-static void acquire_and_send_packet() {
-	if (StartADCAcq(N_MELVECS) != HAL_OK) {
+void run(void)
+{
+	/*
+	 * Contest-ready behavior:
+	 * - Start continuous ADC+DMA acquisition once
+	 * - CPU sleeps in WFI
+	 * - Sound detection + feature extraction + packetization + TX are handled
+	 *   inside adc_dblbuf.c (DMA callbacks)
+	 */
+
+	btn_press = 0;
+
+	/* -1 means "continuous" in adc_dblbuf.c */
+	if (StartADCAcq(-1) != HAL_OK) {
 		DEBUG_PRINT("Error while enabling the DMA\r\n");
+		Error_Handler();
 	}
-	while (!IsADCFinished()) {
+
+	while (1)
+	{
+		/* Optional: allow button as debug trigger (kept minimal) */
+		if (btn_press) {
+			btn_press = 0;
+			/* Nothing to do here: adc_dblbuf.c handles detection & sending */
+		}
+
 		__WFI();
 	}
 }
-
-void run(void)
-{
-	btn_press = 0;
-	while (1)
-	    {
-	        /* ==============================
-	         * Sleep until button is pressed
-	         * ============================== */
-	        while (!btn_press) {
-	            __WFI();   // CPU sleeps here
-	        }
-
-	        /* Button was pressed */
-	        btn_press = 0;
-
-	        /* ==============================
-	         * Do ONE acquisition
-	         * ============================== */
-	        acquire_and_send_packet();
-
-	        /* ==============================
-	         * Go back to sleep
-	         * ============================== */
-	        __WFI();
-	    }
-
-//	while (1)
-//	{
-//	  while (!btn_press) {
-//		  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
-//		  HAL_Delay(1000);
-//		  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_RESET);
-//		  HAL_Delay(1000);
-//		  __WFI();
-//	  }
-//	  btn_press = 0;
-//#if (CONTINUOUS_ACQ == 1)
-//	  while (!btn_press) {
-//		  acquire_and_send_packet();
-//	  }
-//	  btn_press = 0;
-//#elif (CONTINUOUS_ACQ == 0)
-//
-//	  acquire_and_send_packet();
-//
-//	 /* Sleep after acquisition & send */
-//#else
-//#error "Wrong value for CONTINUOUS_ACQ."
-//#endif
-//	}
-}
-
 
 /* USER CODE END 0 */
 
