@@ -71,7 +71,7 @@ myds.ncol
 # -------------------------------------------------------
 # CONFIGURATION
 # -------------------------------------------------------
-train_aug_list = ["original", "time_shift", "add_echo"]
+train_aug_list = ["original", "time_shift", "add_echo", "add_bg_fixed_db"]
 test_aug_list  = ["original"] 
 
 fm_dir = "data/feature_matrices/"
