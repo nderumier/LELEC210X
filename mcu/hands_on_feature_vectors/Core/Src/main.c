@@ -25,7 +25,6 @@
 #include "tim.h"
 #include "gpio.h"
 
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
@@ -58,7 +57,7 @@ volatile uint8_t counting_cycles = 0;
 
 volatile int state = 0;
 volatile int bounce = 0;
-volatile uint16_t ADCBuffer[2*SAMPLES_PER_MELVEC]; /* ADC write buffer (via DMA) */
+volatile uint16_t ADCBuffer[2*2560]; /* ADC write buffer (via DMA) */
 volatile uint16_t* ADCDblBuffer[2] = {&ADCBuffer[0], &ADCBuffer[SAMPLES_PER_MELVEC]};
 
 static volatile uint8_t cur_melvec = 0;
@@ -84,7 +83,7 @@ void stop_cycle_count(char *s);
 /* USER CODE BEGIN 0 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if ((GPIO_Pin == B1_Pin) & !bounce) {
-		HAL_ADC_Start_DMA(&hadc1, (uint32_t *) ADCBuffer, 2 * SAMPLES_PER_MELVEC);
+		HAL_ADC_Start_DMA(&hadc1, (uint32_t *) ADCBuffer, 2 * 2560);
 		HAL_TIM_Base_Start(&htim3);
 		bounce = 1;
 	}
