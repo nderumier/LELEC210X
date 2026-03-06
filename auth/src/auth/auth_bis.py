@@ -1,6 +1,5 @@
 print("Importing libraries...")
 
-
 import json
 import pickle
 from pathlib import Path
@@ -17,6 +16,7 @@ from common.logging import logger
 from leaderboard.utils import get_url
 
 from .utils import payload_to_melvecs
+print("Libraries imported.")
 print("Starting classification script...")
 load_dotenv()
 print("Environment variables loaded.")
