@@ -7,13 +7,13 @@ import csv
 # CONFIGURATION
 # -------------------------------------------------------
 DATASET_DIR = "classification\\src\\classification\\datasets\\soundfiles"        # Path to your dataset root folder
-DELAY_BETWEEN_SOUNDS = 0    # Seconds to wait after playing (time to push button)
+DELAY_BETWEEN_SOUNDS = 2    # Seconds to wait after playing (time to push button)
 EXTENSIONS = ('.wav')       # Audio extensions to look for
 
 # Define which files to play. 
 # Examples: ["fire"] or ["bird", "chain"] or ["chainsaw_01"]
 # Leave empty [] to play ALL files.
-FILTER_PREFIXES = [ "chainsaw"] 
+FILTER_PREFIXES = [ "gunshot"] 
 CSV_FILENAME = "classification\\played_files_log.csv"
 def play_dataset_sequentially():
     # Convert to absolute path for clarity in debug
