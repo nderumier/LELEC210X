@@ -7,7 +7,6 @@
 #include "s2lp.h"
 #include "packet.h"
 
-
 static volatile uint16_t ADCDoubleBuf[2*ADC_BUF_SIZE]; /* ADC group regular conversion data (array of data) */
 static volatile uint16_t* ADCData[2] = {&ADCDoubleBuf[0], &ADCDoubleBuf[ADC_BUF_SIZE]};
 static volatile uint8_t ADCDataRdy[2] = {0, 0};
@@ -18,6 +17,68 @@ static q15_t mel_vectors[N_MELVECS][MELVEC_LENGTH];
 static uint32_t packet_cnt = 0;
 
 static volatile int32_t rem_n_bufs = 0;
+
+/* =========================
+ * Adaptive noise estimation
+ * =========================
+ *
+ * We do NOT use a fixed threshold.
+ * We estimate the noise floor (energy) online with an EWMA.
+ * Then we detect an event if E > alpha * noise_est.
+ *
+ * Tuning:
+ * - NOISE_INIT_BUFS: number of buffers used to bootstrap the noise estimate
+ * - NOISE_BETA_SHIFT: beta = 1/2^shift (how fast noise estimate tracks changes)
+ * - ALPHA: detection aggressiveness (larger -> less sensitive)
+ */
+#define NOISE_INIT_BUFS     (50u)
+#define NOISE_BETA_SHIFT    (6u)    /* beta = 1/64 */
+#define NOISE_ALPHA_NUM     (8u)    /* alpha = 8 */
+#define NOISE_ALPHA_DEN     (1u)
+
+static uint32_t noise_est = 0;
+static uint32_t noise_boot_sum = 0;
+static uint32_t noise_boot_cnt = 0;
+static uint8_t  noise_ready = 0;
+
+static volatile uint8_t recording = 0;
+
+/* Compute buffer energy (sum of squared centered samples) */
+static inline uint32_t compute_energy_u16(const uint16_t *buf, uint32_t n)
+{
+	uint32_t e = 0;
+	for (uint32_t i = 0; i < n; i++) {
+		int32_t s = (int32_t)buf[i] - 2048;  /* 12-bit mid-scale */
+		e += (uint32_t)(s * s);
+	}
+	return e;
+}
+
+/* Update noise estimate */
+static inline void update_noise(uint32_t e)
+{
+	if (!noise_ready) {
+		/* Bootstrap: average of first NOISE_INIT_BUFS energies */
+		noise_boot_sum += e;
+		noise_boot_cnt++;
+		if (noise_boot_cnt >= NOISE_INIT_BUFS) {
+			noise_est = noise_boot_sum / NOISE_INIT_BUFS;
+			noise_ready = 1;
+		}
+		return;
+	}
+
+	/* EWMA update: N = N + beta*(E - N), beta=1/2^NOISE_BETA_SHIFT */
+	int32_t diff = (int32_t)e - (int32_t)noise_est;
+	noise_est = (uint32_t)((int32_t)noise_est + (diff >> NOISE_BETA_SHIFT));
+}
+
+/* Decide if sound is present (adaptive threshold) */
+static inline uint8_t sound_detected_adaptive(uint32_t e)
+{
+	if (!noise_ready) return 0; /* don't trigger during learning phase */
+	return (e > (NOISE_ALPHA_NUM * noise_est) / NOISE_ALPHA_DEN);
+}
 
 int StartADCAcq(int32_t n_bufs) {
 	rem_n_bufs = n_bufs;
@@ -93,9 +154,11 @@ static void send_spectrogram() {
 }
 
 static void ADC_Callback(int buf_cplt) {
+	/* In continuous mode (rem_n_bufs = -1), we do not decrement */
 	if (rem_n_bufs != -1) {
 		rem_n_bufs--;
 	}
+
 	if (rem_n_bufs == 0) {
 		StopADCAcq();
 	} else if (ADCDataRdy[1-buf_cplt]) {
@@ -103,16 +166,42 @@ static void ADC_Callback(int buf_cplt) {
 		Error_Handler();
 	}
 	ADCDataRdy[buf_cplt] = 1;
-	//start_cycle_count();
+
+	/* ===== 1) Adaptive noise tracking + detection on raw buffer energy ===== */
+	const uint16_t *raw = (const uint16_t *)ADCData[buf_cplt];
+	uint32_t E = compute_energy_u16(raw, ADC_BUF_SIZE);
+
+	/* Noise should be updated mainly when not recording an event */
+	if (!recording) {
+		update_noise(E);
+	}
+
+	if (!recording) {
+		/* If no event detected -> skip heavy processing */
+		if (!sound_detected_adaptive(E)) {
+			ADCDataRdy[buf_cplt] = 0;
+			return;
+		}
+
+		/* Event starts: reset mel vector index */
+		recording = 1;
+		cur_melvec = 0;
+	}
+
+	/* ===== 2) Heavy processing only during an event ===== */
 	Spectrogram_Format((q15_t *)ADCData[buf_cplt]);
 	Spectrogram_Compute((q15_t *)ADCData[buf_cplt], mel_vectors[cur_melvec]);
 	cur_melvec++;
-	//stop_cycle_count("spectrogram");
+
 	ADCDataRdy[buf_cplt] = 0;
 
-	if (rem_n_bufs == 0) {
+	/* ===== 3) Once we have N_MELVECS -> send one packet and go back to listening ===== */
+	if (recording && (cur_melvec >= N_MELVECS)) {
 		print_spectrogram();
 		send_spectrogram();
+
+		recording = 0;
+		cur_melvec = 0;
 	}
 }
 

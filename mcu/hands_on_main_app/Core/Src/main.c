@@ -39,22 +39,18 @@
 #include "config.h"
 #include "utils.h"
 #include "usart.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -68,7 +64,6 @@ volatile uint8_t btn_press;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -77,44 +72,40 @@ void SystemClock_Config(void);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == B1_Pin) {
+		/* Keep as optional debug/manual trigger (not required for contest mode) */
 		btn_press = 1;
 	}
 	else if (GPIO_Pin == RADIO_INT_Pin)
 		S2LP_IRQ_Handler();
 }
 
-static void acquire_and_send_packet() {
-	if (StartADCAcq(N_MELVECS) != HAL_OK) {
-		DEBUG_PRINT("Error while enabling the DMA\r\n");
-	}
-	while (!IsADCFinished()) {
-		__WFI();
-	}
-}
-
 void run(void)
 {
+	/*
+	 * Contest-ready behavior:
+	 * - Start continuous ADC+DMA acquisition once
+	 * - CPU sleeps in WFI
+	 * - Sound detection + feature extraction + packetization + TX are handled
+	 *   inside adc_dblbuf.c (DMA callbacks)
+	 */
+
 	btn_press = 0;
+
+	/* -1 means "continuous" in adc_dblbuf.c */
+	if (StartADCAcq(-1) != HAL_OK) {
+		DEBUG_PRINT("Error while enabling the DMA\r\n");
+		Error_Handler();
+	}
 
 	while (1)
 	{
-	  while (!btn_press) {
-		  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_SET);
-		  HAL_Delay(200);
-		  HAL_GPIO_WritePin(GPIOB, LD2_Pin, GPIO_PIN_RESET);
-		  HAL_Delay(200);
-	  }
-	  btn_press = 0;
-#if (CONTINUOUS_ACQ == 1)
-	  while (!btn_press) {
-		  acquire_and_send_packet();
-	  }
-	  btn_press = 0;
-#elif (CONTINUOUS_ACQ == 0)
-	  acquire_and_send_packet();
-#else
-#error "Wrong value for CONTINUOUS_ACQ."
-#endif
+		/* Optional: allow button as debug trigger (kept minimal) */
+		if (btn_press) {
+			btn_press = 0;
+			/* Nothing to do here: adc_dblbuf.c handles detection & sending */
+		}
+
+		__WFI();
 	}
 }
 
@@ -221,7 +212,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_11;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_9;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -237,7 +228,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
   {
     Error_Handler();
   }

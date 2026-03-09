@@ -47,7 +47,6 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-
     coordinate: [1208, 268.0]
     rotation: 0
     state: true
@@ -151,7 +150,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: 868e6
+    value: 866e6
   states:
     bus_sink: false
     bus_source: false
