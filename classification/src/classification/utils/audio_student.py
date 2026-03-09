@@ -8,7 +8,6 @@ import sounddevice as sd
 import soundfile as sf
 from numpy import ndarray
 from scipy.signal import fftconvolve
-import scipy.signal
 
 # -----------------------------------------------------------------------------
 """
@@ -67,7 +66,7 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        resig = scipy.signal.resample(sig, int(len(sig) * newsr / sr))
+        resig = signal.resample(sig, int(len(sig) * newsr / sr))
 
         return (resig, newsr)
 
@@ -152,7 +151,6 @@ class AudioUtil:
         sig = fftconvolve(sig, echo_sig, mode="full")[:sig_len]
         return (sig, sr)
 
-    import numpy as np
 
     def filter(audio, filt) -> tuple[np.ndarray, int]:
         """
@@ -240,7 +238,46 @@ class AudioUtil:
             sig = sig / max_abs
 
         return (sig, sr)
+    
+    def add_bg_fixed_db(audio, bg_audio=open('classification\src\classification\datasets\soundfiles\background.wav'), db=-20) -> tuple[np.ndarray, int]:
+        """
+        Add background audio at a fixed dB level relative to the main signal.
 
+        :param audio: Tuple (signal, sr) of main audio.
+        :param bg_audio: Tuple (signal, sr) of background audio.
+        :param db: Desired level of background relative to main audio in dB.
+        :return: Tuple (augmented_signal, sr)
+        """
+        sig, sr = audio
+        bg_sig, bg_sr = bg_audio
+
+        # Resample background if needed
+        if bg_sr != sr:
+            bg_sig, _ = AudioUtil.resample((bg_sig, bg_sr), sr)
+
+        # Truncate/pad background to match main signal length
+        if len(bg_sig) < len(sig):
+            pad_len = len(sig) - len(bg_sig)
+            bg_sig = np.concatenate((bg_sig, np.zeros(pad_len)))
+        elif len(bg_sig) > len(sig):
+            bg_sig = bg_sig[:len(sig)]
+
+        # Convert dB to linear scale
+        factor = 10 ** (db / 20)
+
+        # Normalize background to have max amplitude = 1
+        if np.max(np.abs(bg_sig)) > 0:
+            bg_sig = bg_sig / np.max(np.abs(bg_sig))
+
+        # Scale background to desired dB and add to main signal
+        sig_aug = sig + bg_sig * factor
+
+        # Avoid clipping
+        max_abs = np.max(np.abs(sig_aug))
+        if max_abs > 1.0:
+            sig_aug = sig_aug / max_abs
+
+        return (sig_aug, sr)
 
     def specgram(audio, Nft=512, fs2=11025) -> np.ndarray:
         """
