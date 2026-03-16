@@ -13,7 +13,11 @@ EXTENSIONS = ('.wav')       # Audio extensions to look for
 # Define which files to play. 
 # Examples: ["fire"] or ["bird", "chain"] or ["chainsaw_01"]
 # Leave empty [] to play ALL files.
+<<<<<<< HEAD
 FILTER_PREFIXES = [ "gunshot"] 
+=======
+FILTER_PREFIXES = ["fire"]  # Only play files starting with "chainsaw"
+>>>>>>> a9294a24a6a5034af3dceb8228a2ccf1dd157726
 CSV_FILENAME = "classification\\played_files_log.csv"
 def play_dataset_sequentially():
     # Convert to absolute path for clarity in debug
