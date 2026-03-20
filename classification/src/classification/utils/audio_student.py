@@ -4,6 +4,7 @@ import librosa
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import signal
 import sounddevice as sd
 import soundfile as sf
 from numpy import ndarray
@@ -239,7 +240,7 @@ class AudioUtil:
 
         return (sig, sr)
     
-    def add_bg_fixed_db(audio, bg_audio=open('classification\src\classification\datasets\soundfiles\background.wav'), db=-20) -> tuple[np.ndarray, int]:
+    def add_bg_fixed_db(audio, bg_audio=open('classification\\src\\classification\\datasets\\soundfiles\\background.wav'), db=-20) -> tuple[np.ndarray, int]:
         """
         Add background audio at a fixed dB level relative to the main signal.
 
