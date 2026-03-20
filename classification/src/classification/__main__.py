@@ -141,7 +141,7 @@ def main(
                 logger.info(f"Prediction: {guess}")
 
                 # =====================================================
-                url = "http://localhost:5000"
+                url = "http://lelec210x.sipr.ucl.ac.be"
                 if submit:
                     response = requests.post(
                         f"{url}/lelec210x/leaderboard/submit/{key}/{guess}"

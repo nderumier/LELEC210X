@@ -9,6 +9,7 @@ import sounddevice as sd
 import soundfile as sf
 from numpy import ndarray
 from scipy.signal import fftconvolve
+import scipy.signal as signal
 
 # -----------------------------------------------------------------------------
 """
@@ -116,7 +117,7 @@ class AudioUtil:
 
         # Apply scaling
         sig_scaled = sig * scale
-
+        sig_scaled = sig_scaled / (np.max(np.abs(sig_scaled)) + 1e-9)
         return sig_scaled, sr
 
     def add_noise(audio, sigma=0.05) -> tuple[ndarray, int]:
@@ -240,46 +241,36 @@ class AudioUtil:
 
         return (sig, sr)
     
+<<<<<<< HEAD
+    def add_bg_fixed_db(audio, bg_audio, db=-2):
+=======
     def add_bg_fixed_db(audio, bg_audio=open('classification\\src\\classification\\datasets\\soundfiles\\background.wav'), db=-20) -> tuple[np.ndarray, int]:
+>>>>>>> 15ae95a704478adcfbadfad936c2b24325bfd937
         """
         Add background audio at a fixed dB level relative to the main signal.
-
-        :param audio: Tuple (signal, sr) of main audio.
-        :param bg_audio: Tuple (signal, sr) of background audio.
-        :param db: Desired level of background relative to main audio in dB.
-        :return: Tuple (augmented_signal, sr)
         """
         sig, sr = audio
         bg_sig, bg_sr = bg_audio
 
-        # Resample background if needed
         if bg_sr != sr:
             bg_sig, _ = AudioUtil.resample((bg_sig, bg_sr), sr)
 
-        # Truncate/pad background to match main signal length
+        # match lengths
         if len(bg_sig) < len(sig):
-            pad_len = len(sig) - len(bg_sig)
-            bg_sig = np.concatenate((bg_sig, np.zeros(pad_len)))
-        elif len(bg_sig) > len(sig):
+            bg_sig = np.pad(bg_sig, (0, len(sig) - len(bg_sig)))
+        else:
             bg_sig = bg_sig[:len(sig)]
 
-        # Convert dB to linear scale
+        # convert dB → amplitude
         factor = 10 ** (db / 20)
 
-        # Normalize background to have max amplitude = 1
-        if np.max(np.abs(bg_sig)) > 0:
-            bg_sig = bg_sig / np.max(np.abs(bg_sig))
+        bg_sig = bg_sig / (np.max(np.abs(bg_sig)) + 1e-9)
 
-        # Scale background to desired dB and add to main signal
-        sig_aug = sig + bg_sig * factor
+        sig_aug = sig + factor * bg_sig
 
-        # Avoid clipping
-        max_abs = np.max(np.abs(sig_aug))
-        if max_abs > 1.0:
-            sig_aug = sig_aug / max_abs
+        sig_aug = sig_aug / (np.max(np.abs(sig_aug)) + 1e-9)
 
-        return (sig_aug, sr)
-
+        return sig_aug, sr
     def specgram(audio, Nft=512, fs2=11025) -> np.ndarray:
         """
         Compute a Spectrogram.
@@ -342,8 +333,7 @@ class AudioUtil:
 
         # --- 1. RESAMPLING ---
         if sr != fs2:
-            new_length = int(len(sig) * fs2 / sr)
-            y = AudioUtil.resample(sig, new_length)
+            y, _ = AudioUtil.resample((sig, sr), fs2)
         else:
             y = sig
 
@@ -435,34 +425,38 @@ class Feature_vector_DS:
         """
         return len(self.dataset) * self.data_aug_factor
 
-    def get_audiosignal(self, cls_index: tuple[str, int]) -> tuple[ndarray, int]:
-        """
-        Get temporal signal of i'th item in dataset.
-
-        :param cls_index: Class name and index.
-        """
+    def get_audiosignal(self, cls_index):
+    
         audio_file = self.dataset[cls_index]
+
         aud = AudioUtil.open(audio_file)
         aud = AudioUtil.resample(aud, self.sr)
 
-        if self.data_aug is not None:
-            if "add_bg" in self.data_aug:
-                aud = AudioUtil.add_bg(
-                    aud,
-                    self.dataset,
-                    num_sources=1,
-                    max_ms=self.duration,
-                    amplitude_limit=0.1,
-                )
-            if "echo" in self.data_aug:
-                aud = AudioUtil.add_echo(aud)
-            if "noise" in self.data_aug:
-                aud = AudioUtil.add_noise(aud, sigma=0.05)
-            if "scaling" in self.data_aug:
-                aud = AudioUtil.scaling(aud, scaling_limit=5)
+        sig, sr = aud
 
-        # aud = AudioUtil.normalize(aud, target_dB=10)
-        aud = (aud[0] / np.max(np.abs(aud[0])), aud[1])
+        # normalize first
+        sig = sig / (np.max(np.abs(sig)) + 1e-9)
+        aud = (sig, sr)
+
+        if self.data_aug is not None:
+
+            if "noise" in self.data_aug:
+                aud = AudioUtil.add_noise(aud, sigma=0.3)
+
+            if "echo" in self.data_aug:
+                aud = AudioUtil.echo(aud, nechos=5)
+
+            if "scaling" in self.data_aug:
+                aud = AudioUtil.scaling(aud, scaling_limit=2)
+
+            if "bg_fixed" in self.data_aug:
+
+                bg_audio = AudioUtil.open(
+                    "classification/src/classification/datasets/soundfiles/background.wav"
+                )
+
+                aud = AudioUtil.add_bg_fixed_db(aud, bg_audio, db=-5)
+
         return aud
 
     def __getitem__(self, cls_index: tuple[str, int]) -> tuple[ndarray, int]:

@@ -1,4 +1,46 @@
 Index,Filename,Prefix (Class),Full Path
+<<<<<<< HEAD
+1,gunshot_00.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_00.wav
+2,gunshot_01.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_01.wav
+3,gunshot_02.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_02.wav
+4,gunshot_03.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_03.wav
+5,gunshot_04.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_04.wav
+6,gunshot_05.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_05.wav
+7,gunshot_06.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_06.wav
+8,gunshot_07.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_07.wav
+9,gunshot_08.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_08.wav
+10,gunshot_09.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_09.wav
+11,gunshot_10.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_10.wav
+12,gunshot_11.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_11.wav
+13,gunshot_12.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_12.wav
+14,gunshot_13.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_13.wav
+15,gunshot_14.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_14.wav
+16,gunshot_15.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_15.wav
+17,gunshot_16.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_16.wav
+18,gunshot_17.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_17.wav
+19,gunshot_18.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_18.wav
+20,gunshot_19.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_19.wav
+21,gunshot_20.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_20.wav
+22,gunshot_21.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_21.wav
+23,gunshot_22.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_22.wav
+24,gunshot_23.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_23.wav
+25,gunshot_24.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_24.wav
+26,gunshot_25.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_25.wav
+27,gunshot_26.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_26.wav
+28,gunshot_27.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_27.wav
+29,gunshot_28.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_28.wav
+30,gunshot_29.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_29.wav
+31,gunshot_30.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_30.wav
+32,gunshot_31.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_31.wav
+33,gunshot_32.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_32.wav
+34,gunshot_33.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_33.wav
+35,gunshot_34.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_34.wav
+36,gunshot_35.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_35.wav
+37,gunshot_36.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_36.wav
+38,gunshot_37.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_37.wav
+39,gunshot_38.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_38.wav
+40,gunshot_39.wav,gunshot,classification\src\classification\datasets\soundfiles\gunshot_39.wav
+=======
 1,fire_00.wav,fire,classification\src\classification\datasets\soundfiles\fire_00.wav
 2,fire_01.wav,fire,classification\src\classification\datasets\soundfiles\fire_01.wav
 3,fire_02.wav,fire,classification\src\classification\datasets\soundfiles\fire_02.wav
@@ -39,3 +81,4 @@ Index,Filename,Prefix (Class),Full Path
 38,fire_37.wav,fire,classification\src\classification\datasets\soundfiles\fire_37.wav
 39,fire_38.wav,fire,classification\src\classification\datasets\soundfiles\fire_38.wav
 40,fire_39.wav,fire,classification\src\classification\datasets\soundfiles\fire_39.wav
+>>>>>>> a9294a24a6a5034af3dceb8228a2ccf1dd157726
