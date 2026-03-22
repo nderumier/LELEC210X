@@ -97,10 +97,10 @@ if __name__ == "__main__":
             feature_norm = feature_vector / np.linalg.norm(feature_vector)
 
             # PCA transform
-            feature_pca = pca.transform([feature_norm])
+            # feature_pca = pca.transform([feature_norm])
 
             # Prediction
-            prediction = model.predict(feature_pca)[0]
+            prediction = model.predict(feature_norm.reshape(1, -1))[0]
             print(f"Predicted class: {prediction}")
 
             # ----- SAVE VECTORS -----

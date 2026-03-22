@@ -16,9 +16,13 @@ q15_t buf    [  SAMPLES_PER_MELVEC  ]; // Windowed samples
 q15_t buf_fft[2*SAMPLES_PER_MELVEC  ]; // Double size (real|imag) buffer needed for arm_rfft_q15
 q15_t buf_tmp[  SAMPLES_PER_MELVEC/2]; // Intermediate buffer for arm_mat_mult_fast_q15
 
+
+
+
 // Convert 12-bit DC ADC samples to Q1.15 fixed point signal and remove DC component
 void Spectrogram_Format(q15_t *buf)
 {
+//	start_cycle_count();
 	// STEP 0.1 : Increase fixed-point scale
 	//            --> Pointwise shift
 	//            Complexity: O(N)
@@ -43,11 +47,14 @@ void Spectrogram_Format(q15_t *buf)
 	for(uint16_t i=0; i < SAMPLES_PER_MELVEC; i++) { // Remove DC component
 		buf[i] -= (1 << 14);
 	}
+//	stop_cycle_count("Format done");
 }
 
 // Compute spectrogram of samples and transform into MEL vectors.
 void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 {
+
+
 	// STEP 1  : Windowing of input samples
 	//           --> Pointwise product
 	//           Complexity: O(N)
@@ -100,16 +107,16 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 	// STEP 3.4: Denormalize the vector
 	//           Complexity: O(N)
 	//           Number of cycles: 6439
-
+	// start_cycle_count();
 	for (int i=0; i < SAMPLES_PER_MELVEC/2; i++)
 	{
 		buf[i] = (q15_t) ((((q31_t) buf[i]) * ((q31_t) vmax) ) >> 15 );
 	}
-
+	// stop_cycle_count("FFT computation");
 	// STEP 4:   Apply MEL transform
 	//           --> Fast Matrix Multiplication
 	//           Complexity: O(Nmel*N)
-	//           Number of cycles: 20890
+	//           Number of cycles: 20890 -- NEW: 14550 cycles
 
 	// /!\ The difference between the function arm_mat_mult_q15() and the fast variant is that the fast variant use a 32-bit rather than a 64-bit accumulator.
 	// The result of each 1.15 x 1.15 multiplication is truncated to 2.30 format. These intermediate results are accumulated in a 32-bit register in 2.30 format.
@@ -118,12 +125,40 @@ void Spectrogram_Compute(q15_t *samples, q15_t *melvec)
 
 	// /!\ In order to avoid overflows completely the input signals should be scaled down. Scale down one of the input matrices by log2(numColsA) bits to avoid overflows,
 	// as a total of numColsA additions are computed internally for each output element. Because our hz2mel_mat matrix contains lots of zeros in its rows, this is not necessary.
-	
 	arm_matrix_instance_q15 hz2mel_inst, fftmag_inst, melvec_inst;
 
 	arm_mat_init_q15(&hz2mel_inst, MELVEC_LENGTH, SAMPLES_PER_MELVEC/2, hz2mel_mat);
 	arm_mat_init_q15(&fftmag_inst, SAMPLES_PER_MELVEC/2, 1, buf);
 	arm_mat_init_q15(&melvec_inst, MELVEC_LENGTH, 1, melvec);
 
-	arm_mat_mult_fast_q15(&hz2mel_inst, &fftmag_inst, &melvec_inst, buf_tmp);
+//	arm_mat_mult_fast_q15(&hz2mel_inst, &fftmag_inst, &melvec_inst, buf_tmp);
+
+	void compute_mel_spectrum_q15(
+	    const q15_t *fftmag,
+	    q15_t *melvec
+	)
+	{
+	    for (uint32_t m = 0; m < MELVEC_LENGTH; m++)
+	    {
+	        q31_t acc = 0;
+
+	        uint16_t start = mel_band_ranges[m].start_bin;
+	        uint16_t end   = mel_band_ranges[m].end_bin;
+
+	        const q15_t *filter_row = &hz2mel_mat[m * FFT_BINS];
+
+	        for (uint32_t k = start; k <= end; k++)
+	        {
+	            acc += (q31_t)filter_row[k] * fftmag[k];
+	        }
+
+	        melvec[m] = (q15_t)__SSAT(acc >> 15, 16);
+	    }
+	}
+//	start_cycle_count();
+	compute_mel_spectrum_q15(buf, melvec);
+
+//	stop_cycle_count("FFT computation");
+
+
 }
