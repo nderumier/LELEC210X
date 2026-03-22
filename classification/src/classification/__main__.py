@@ -1,9 +1,14 @@
+print("Importing libraries...")
+
+
 import json
 import pickle
 from pathlib import Path
 
 import click
 import requests
+import numpy as np
+import cv2
 
 import common
 from auth import PRINT_PREFIX
@@ -12,8 +17,27 @@ from common.logging import logger
 from leaderboard.utils import get_url
 
 from .utils import payload_to_melvecs
-
+print("Starting classification script...")
 load_dotenv()
+print("Environment variables loaded.")
+
+TARGET_SHAPE = (20, 20)
+
+
+# -------------------------------------------------------
+# HELPER: Feature Extraction with Forced Resize
+# -------------------------------------------------------
+def get_fixed_feature(melvec):
+    feat2d = melvec
+
+    if feat2d.shape != TARGET_SHAPE:
+        feat2d = cv2.resize(
+            feat2d,
+            (TARGET_SHAPE[1], TARGET_SHAPE[0]),
+            interpolation=cv2.INTER_AREA,
+        )
+
+    return feat2d.reshape(-1)
 
 
 @click.command()
@@ -23,38 +47,27 @@ load_dotenv()
     "_input",
     default="-",
     type=click.File("r"),
-    help="Where to read the input stream. Default to '-', a.k.a. stdin.",
 )
 @click.option(
     "-m",
     "--model",
     default=None,
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="Path to the trained classification model.",
 )
 @common.click.melvec_length
 @common.click.n_melvecs
-@click.option(
-    "--submit/--no-submit",
-    default=True,
-    help="Whether to submit the guesses to the leaderboard.",
-)
+@click.option("--submit/--no-submit", default=True)
 @click.option(
     "-u",
     "--url",
     default=None,
     envvar="LEADERBOARD_URL",
-    show_default=True,
-    show_envvar=True,
-    help="Base API url. If not specified, will use FLASK_RUN_HOST and FLASK_RUN_PORT.",
 )
 @click.option(
     "-k",
     "--key",
     default=None,
     envvar="LEADERBOARD_KEY",
-    show_envvar=True,
-    help="Your private key.",
 )
 @common.click.verbosity
 def main(
@@ -66,39 +79,69 @@ def main(
     url: str | None,
     key: str | None,
 ) -> None:
-    """
-    Extract Mel vectors from payloads and perform classification on them.
-    Classify MELVECs contained in payloads (from packets).
 
-    Most likely, you want to pipe this script after running authentification
-    on the packets:
-
-        uv run auth | uv run classify
-
-    This way, you will directly receive the authentified packets from STDIN
-    (standard input, i.e., the terminal).
-    """
     if submit:
         if key is None:
             raise click.UsageError("You must provide a key to submit guesses.")
         url = url or get_url()
-    if model:
-        with open(model, "rb") as file:
-            m = pickle.load(file)
-    else:
-        m = None
 
+    # ----------------------------
+    # Load model
+    # ----------------------------
+    with open("classification/data/models/model_audio_svm.pickle", "rb") as f:
+        clf = pickle.load(f)
+    print(f"Loaded model: {clf}")
+    # Same logic as your UART script
+    if isinstance(clf, dict):
+        scaler = clf.get("scaler")
+        pca = clf.get("pca")
+        model = clf["model"]
+    else:
+        model = clf
+        scaler = None
+        pca = None
+
+    # ----------------------------
+    # Stream payloads
+    # ----------------------------
     for payload in _input:
+        print(f"Received payload: {payload.strip()}")
         if PRINT_PREFIX in payload:
             payload = payload[len(PRINT_PREFIX) :]
 
             melvecs = payload_to_melvecs(payload, melvec_length, n_melvecs)
-            logger.info(f"Parsed payload into Mel vectors: {melvecs}")
+            print(f"Parsed payload into Mel vectors with shape: {melvecs.shape}")
+            logger.info(f"Parsed payload into Mel vectors: {melvecs.shape}")
 
-            if m:
-                # TODO: perform classification with your model
-                guess = "fire"
+            if model:
 
+                # =====================================================
+                # YOUR EXACT CLASSIFICATION PIPELINE
+                # =====================================================
+
+                feature_vector = get_fixed_feature(melvecs)
+
+                # ---- Normalisation ----
+                norm_val = np.linalg.norm(feature_vector)
+                if norm_val == 0:
+                    norm_val = 1e-9
+                feature_norm = feature_vector / norm_val
+
+                # ---- Optional scaler ----
+                if scaler is not None:
+                    feature_norm = scaler.transform([feature_norm])[0]
+
+                # ---- Optional PCA ----
+                if pca is not None:
+                    feature_norm = pca.transform([feature_norm])[0]
+
+                # ---- Prediction ----
+                guess = model.predict([feature_norm])[0]
+                print(f"Predicted class: {guess}")
+                logger.info(f"Prediction: {guess}")
+
+                # =====================================================
+                url = "http://lelec210x.sipr.ucl.ac.be"
                 if submit:
                     response = requests.post(
                         f"{url}/lelec210x/leaderboard/submit/{key}/{guess}"
