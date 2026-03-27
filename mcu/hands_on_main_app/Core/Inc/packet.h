@@ -5,6 +5,8 @@
 #ifndef INC_PACKET_H_
 #define INC_PACKET_H_
 
+#include "arm_math.h"
+#include "config.h"
 #include <stdint.h>
 #include <stdlib.h>
 
