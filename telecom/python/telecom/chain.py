@@ -113,8 +113,13 @@ class Chain:
         return x
 
     # Rx methods
+<<<<<<< HEAD
+    ideal_preamble_detect: bool = True
+ 
+=======
     ideal_preamble_detect: bool = False
 
+>>>>>>> origin/main
     use_dynamic_ppd: bool = False
 
     def preamble_detect(self, y: np.array) -> int | None:
@@ -178,7 +183,12 @@ class BasicChain(Chain):
 
     ideal_preamble_detect = False
 
+<<<<<<< HEAD
+    use_dynamic_ppd       = True
+    
+=======
     use_dynamic_ppd = True
+>>>>>>> origin/main
 
     def preamble_detect_ppd(self, y):
         """Detect a preamble computing the received energy (average on a window)."""
