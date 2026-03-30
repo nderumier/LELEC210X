@@ -1,17 +1,20 @@
 import os
+import random
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.decomposition import PCA
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, precision_recall_fscore_support
 from sklearn.utils import shuffle
 
-# PyTorch Imports
+# PyTorch & Optuna Imports
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
+import optuna 
+from optuna.visualization.matplotlib import plot_optimization_history, plot_param_importances
 
 # Custom imports
 from src.classification.utils.plots import show_confusion_matrix
@@ -25,30 +28,23 @@ MODEL_DIR = "classification\\data\\models"
 BEST_MODEL_PATH = os.path.join(MODEL_DIR, "best_audio_mlp.pth")
 TARGET_SHAPE = (20, 20)
 
-# Classes to exclude
 CLASSES_TO_REMOVE = ["background", "handsaw", "birds", "helicopter", "firorks"]
 
 os.makedirs(FM_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 # -------------------------------------------------------
-# PART 0: Loading .npy files from directory
+# PART 0 & 1: Data Loading and Preprocessing
 # -------------------------------------------------------
-X_all = []
-y_all = []
-
+X_all, y_all = [], []
 print(f"📂 Scanning directory: {INPUT_VECTORS_DIR}")
 
 if not os.path.exists(INPUT_VECTORS_DIR):
     raise FileNotFoundError(f"❌ Directory not found: {INPUT_VECTORS_DIR}")
 
-all_files = [f for f in os.listdir(INPUT_VECTORS_DIR) if f.endswith('.npy')]
-
-for filename in all_files:
+for filename in [f for f in os.listdir(INPUT_VECTORS_DIR) if f.endswith('.npy')]:
     classname = filename.split('_')[0]
-    
-    if classname in CLASSES_TO_REMOVE:
-        continue
+    if classname in CLASSES_TO_REMOVE: continue
         
     filepath = os.path.join(INPUT_VECTORS_DIR, filename)
     spec_matrix = np.load(filepath)
@@ -56,25 +52,13 @@ for filename in all_files:
     if spec_matrix.shape == TARGET_SHAPE:
         X_all.append(spec_matrix.flatten())
         y_all.append(classname)
-    else:
-        print(f"⚠️ Skipping {filename}: Wrong shape {spec_matrix.shape}")
 
-X_all = np.array(X_all)
-y_all = np.array(y_all)
-
+X_all, y_all = np.array(X_all), np.array(y_all)
 classnames = sorted(list(set(y_all)))
 print(f"✔ Classes kept: {', '.join(classnames)}")
 
-# -------------------------------------------------------
-# PART 1: Train / Val / Test Split & Preprocessing
-# -------------------------------------------------------
-X_train, X_temp, y_train, y_temp = train_test_split(
-    X_all, y_all, test_size=0.3, random_state=42, stratify=y_all
-)
-
-X_val, X_test, y_val, y_test = train_test_split(
-    X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
-)
+X_train, X_temp, y_train, y_temp = train_test_split(X_all, y_all, test_size=0.3, random_state=42, stratify=y_all)
+X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp)
 
 label_encoder = LabelEncoder()
 y_train_enc = label_encoder.fit_transform(y_train)
@@ -93,81 +77,67 @@ X_test_pca  = pca.transform(X_test_sc)
 
 input_dim = X_train_pca.shape[1]
 num_classes = len(classnames)
-
-import os
-import random
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.decomposition import PCA
-from sklearn.metrics import accuracy_score, classification_report, precision_recall_fscore_support
-from sklearn.utils import shuffle
-
-# PyTorch Imports
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import TensorDataset, DataLoader
-
-# Custom imports
-from src.classification.utils.plots import show_confusion_matrix
-
-# -------------------------------------------------------
-# CONFIGURATION & PART 0-1 (Keep your existing code here)
-# -------------------------------------------------------
-# (Assuming X_train_pca, X_val_pca, X_test_pca, y_train_enc, y_val_enc, y_test_enc, 
-# input_dim, and num_classes are all loaded and processed as per your snippet)
-
-# Ensure device is set
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BEST_MODEL_PATH = "best_tuned_audio_mlp.pth"
+
+train_dataset = TensorDataset(torch.FloatTensor(X_train_pca), torch.LongTensor(y_train_enc))
+val_dataset   = TensorDataset(torch.FloatTensor(X_val_pca), torch.LongTensor(y_val_enc))
 
 # -------------------------------------------------------
-# PART 2: DYNAMIC NEURAL NETWORK (For Hyperparameter Tuning)
+# PART 2: FULLY DYNAMIC NEURAL NETWORK
 # -------------------------------------------------------
 class AudioMLP(nn.Module):
-    # We pass hidden_units and dropout_rate dynamically now
-    def __init__(self, input_size, num_classes, hidden_units, dropout_rate):
+    def __init__(self, input_size, num_classes, n_layers, hidden_units_list, dropout_rate):
         super(AudioMLP, self).__init__()
-        self.network = nn.Sequential(
-            nn.Linear(input_size, hidden_units[0]),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate), # Technique to mitigate overfitting
-            nn.Linear(hidden_units[0], hidden_units[1]),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(hidden_units[1], num_classes) 
-        )
+        
+        layers = []
+        in_features = input_size
+        
+        # Dynamically stack the exact number of layers Optuna asks for
+        for i in range(n_layers):
+            layers.append(nn.Linear(in_features, hidden_units_list[i]))
+            layers.append(nn.ReLU())
+            layers.append(nn.Dropout(dropout_rate))
+            in_features = hidden_units_list[i] # Output of this layer is input to the next
+            
+        # Add the final classification layer
+        layers.append(nn.Linear(in_features, num_classes))
+        
+        # Unpack the list of layers into a Sequential model
+        self.network = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.network(x)
 
 # -------------------------------------------------------
-# PART 3: TRAINING FUNCTION (Monitoring Progress & Early Stopping)
+# PART 3: TRAINING FUNCTION
 # -------------------------------------------------------
 def train_and_evaluate(params, train_dataset, val_dataset):
-    """Trains a model with specific hyperparameters and returns the best validation loss."""
-    
-    # 1. Setup DataLoaders with the chosen batch size
     train_loader = DataLoader(train_dataset, batch_size=params['batch_size'], shuffle=True)
     val_loader   = DataLoader(val_dataset, batch_size=params['batch_size'], shuffle=False)
 
-    # 2. Initialize Model, Loss, and Optimizer
-    model = AudioMLP(input_dim, num_classes, params['hidden_units'], params['dropout']).to(device)
+    # Instantiate the dynamic model
+    model = AudioMLP(input_dim, num_classes, params['n_layers'], params['hidden_units_list'], params['dropout']).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=params['lr'], weight_decay=1e-3)
     
-    # 3. Early Stopping Setup
+    # Dynamically select the optimizer
+    if params['optimizer_name'] == 'AdamW':
+        optimizer = optim.AdamW(model.parameters(), lr=params['lr'], weight_decay=params['weight_decay'])
+    elif params['optimizer_name'] == 'Adam':
+        optimizer = optim.Adam(model.parameters(), lr=params['lr'], weight_decay=params['weight_decay'])
+    else: # SGD
+        optimizer = optim.SGD(model.parameters(), lr=params['lr'], weight_decay=params['weight_decay'], momentum=0.9)
+    
     epochs = 50 
     patience = 7
     patience_counter = 0
     best_val_loss = float('inf')
     best_model_state = None
+    
+    train_loss_history, val_loss_history = [], []
 
     for epoch in range(epochs):
-        # --- TRAINING ---
         model.train()
+        running_train_loss = 0.0
         for X_batch, y_batch in train_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             optimizer.zero_grad()
@@ -175,97 +145,131 @@ def train_and_evaluate(params, train_dataset, val_dataset):
             loss = criterion(outputs, y_batch)
             loss.backward()
             optimizer.step()
+            running_train_loss += loss.item() * X_batch.size(0)
 
-        # --- VALIDATION ---
+        epoch_train_loss = running_train_loss / len(train_loader.dataset)
+        train_loss_history.append(epoch_train_loss)
+
         model.eval()
-        val_loss = 0.0
+        running_val_loss = 0.0
         with torch.no_grad():
             for X_batch, y_batch in val_loader:
                 X_batch, y_batch = X_batch.to(device), y_batch.to(device)
                 outputs = model(X_batch)
                 loss = criterion(outputs, y_batch)
-                val_loss += loss.item() * X_batch.size(0)
+                running_val_loss += loss.item() * X_batch.size(0)
         
-        val_loss /= len(val_loader.dataset)
+        epoch_val_loss = running_val_loss / len(val_loader.dataset)
+        val_loss_history.append(epoch_val_loss)
 
-        # --- EARLY STOPPING LOGIC ---
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
+        if epoch_val_loss < best_val_loss:
+            best_val_loss = epoch_val_loss
             best_model_state = model.state_dict()
-            patience_counter = 0 # Reset patience
+            patience_counter = 0 
         else:
             patience_counter += 1
 
         if patience_counter >= patience:
-            # Stop early if the model is learning to memorize instead of generalise
             break 
             
-    return best_val_loss, best_model_state
+    return best_val_loss, best_model_state, train_loss_history, val_loss_history
 
 # -------------------------------------------------------
-# PART 4: HYPERPARAMETER TUNING (Random Search)
+# PART 4: OPTUNA HYPERPARAMETER TUNING
 # -------------------------------------------------------
-print("\n🔍 Starting Hyperparameter Tuning (Random Search)...")
+print("\n🔍 Starting Optuna Hyperparameter Optimization (Ultimate Edition)...")
 
-# Define the grid of hyperparameters to explore
-param_grid = {
-    'lr': [0.001, 0.0005, 0.0001],
-    'batch_size': [64, 128, 256],
-    'dropout': [0.3, 0.4, 0.5],
-    'hidden_units': [[128, 64], [100, 50], [64, 32]]
-}
-
-# Create base PyTorch datasets
-train_dataset = TensorDataset(torch.FloatTensor(X_train_pca), torch.LongTensor(y_train_enc))
-val_dataset   = TensorDataset(torch.FloatTensor(X_val_pca), torch.LongTensor(y_val_enc))
-
-NUM_SEARCHES = 10 # Number of random combinations to try
 best_overall_loss = float('inf')
-best_hyperparameters = None
+best_train_history = []
+best_val_history = []
 
-for i in range(NUM_SEARCHES):
-    # Randomly select a combination of hyperparameters
-    current_params = {
-        'lr': random.choice(param_grid['lr']),
-        'batch_size': random.choice(param_grid['batch_size']),
-        'dropout': random.choice(param_grid['dropout']),
-        'hidden_units': random.choice(param_grid['hidden_units'])
+def objective(trial):
+    global best_overall_loss, best_train_history, best_val_history
+    
+    # Let Optuna decide how many layers the network should have (1 to 4)
+    n_layers = trial.suggest_int('n_layers', 1, 4)
+    
+    # Create a list to hold the number of neurons for each layer
+    hidden_units_list = []
+    for i in range(n_layers):
+        # Optuna independently decides the width of layer 'i'
+        hidden_units_list.append(trial.suggest_int(f'n_units_l{i}', 32, 256, step=32))
+    
+    params = {
+        'lr': trial.suggest_float('lr', 1e-4, 1e-2, log=True),
+        'dropout': trial.suggest_float('dropout', 0.1, 0.6),
+        'batch_size': trial.suggest_categorical('batch_size', [64, 128, 256, 512]),
+        'weight_decay': trial.suggest_float('weight_decay', 1e-5, 1e-2, log=True),
+        'optimizer_name': trial.suggest_categorical('optimizer_name', ['Adam', 'AdamW', 'SGD']),
+        'n_layers': n_layers,
+        'hidden_units_list': hidden_units_list
     }
     
-    print(f"[{i+1}/{NUM_SEARCHES}] Testing Params: {current_params}")
+    val_loss, model_state, t_hist, v_hist = train_and_evaluate(params, train_dataset, val_dataset)
     
-    # Train model with these parameters
-    val_loss, model_state = train_and_evaluate(current_params, train_dataset, val_dataset)
-    
-    print(f"    ↳ Validation Loss: {val_loss:.4f}")
-    
-    # Save the best model across all searches
     if val_loss < best_overall_loss:
         best_overall_loss = val_loss
-        best_hyperparameters = current_params
+        best_train_history = t_hist
+        best_val_history = v_hist
         torch.save(model_state, BEST_MODEL_PATH)
+        
+    return val_loss
 
-print(f"\n🏆 Best Hyperparameters Found: {best_hyperparameters}")
-print(f"🌟 Best Validation Loss: {best_overall_loss:.4f}")
+study = optuna.create_study(direction='minimize')
+study.optimize(objective, n_trials=140)
+
+best_hyperparameters = study.best_params
+
+print(f"\n==================================================")
+print(f"👑 OPTUNA FINISHED! BEST HYPERPARAMETERS:")
+print(f"{best_hyperparameters}")
+print(f"🌟 Best Validation Loss: {study.best_value:.4f}")
+print(f"==================================================")
+
+# --- OPTUNA VISUAL DASHBOARDS ---
+plot_optimization_history(study)
+plt.title("Optuna: Optimization History (All Trials)")
+plt.tight_layout()
+plt.show()
+
+plot_param_importances(study)
+plt.title("Optuna: Hyperparameter Importance")
+plt.tight_layout()
+plt.show()
 
 # -------------------------------------------------------
-# PART 5: EVALUATION ON TEST SET (Accuracy, Precision, Recall, F1)
+# PART 5: VISUALIZE TRAINING PROGRESS (Best Model)
+# -------------------------------------------------------
+plt.figure(figsize=(8, 5))
+plt.plot(best_train_history, label='Training Loss', color='blue')
+plt.plot(best_val_history, label='Validation Loss', color='red')
+plt.title(f'Learning Curve for Best Model')
+plt.xlabel('Epochs')
+plt.ylabel('Loss (CrossEntropy)')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# -------------------------------------------------------
+# PART 6: EVALUATION ON TEST SET 
 # -------------------------------------------------------
 print(f"\n📥 Evaluating Best Model on Test Set...")
 
-# Initialize the model using the BEST hyperparameters found
+# Extract the winning layer architecture from the dictionary
+n_layers_best = best_hyperparameters['n_layers']
+hidden_units_best = [best_hyperparameters[f'n_units_l{i}'] for i in range(n_layers_best)]
+
 best_model = AudioMLP(
     input_size=input_dim, 
     num_classes=num_classes, 
-    hidden_units=best_hyperparameters['hidden_units'], 
+    n_layers=n_layers_best, 
+    hidden_units_list=hidden_units_best, 
     dropout_rate=best_hyperparameters['dropout']
 ).to(device)
 
-# Load the saved weights
 best_model.load_state_dict(torch.load(BEST_MODEL_PATH))
 best_model.eval()
 
-# Create Test DataLoader using the best batch size
 test_dataset = TensorDataset(torch.FloatTensor(X_test_pca), torch.LongTensor(y_test_enc))
 test_loader  = DataLoader(test_dataset, batch_size=best_hyperparameters['batch_size'], shuffle=False)
 
@@ -279,13 +283,11 @@ with torch.no_grad():
         y_pred_list.extend(predicted.cpu().numpy())
         y_true_list.extend(y_batch.numpy())
 
-# Convert labels back to strings
 y_pred_names = label_encoder.inverse_transform(y_pred_list)
 y_true_names = label_encoder.inverse_transform(y_true_list)
 
-# Calculate metrics from the image
 accuracy = accuracy_score(y_true_names, y_pred_names)
-precision, recall, f1, _ = precision_recall_fscore_support(y_true_names, y_pred_names, average='weighted')
+precision, recall, f1, _ = precision_recall_fscore_support(y_true_names, y_pred_names, average='weighted', zero_division=0)
 
 print("\n📊 --- FINAL EVALUATION METRICS ---")
 print(f"Accuracy:  {accuracy:.4f}")
@@ -294,8 +296,7 @@ print(f"Recall:    {recall:.4f}")
 print(f"F1-Score:  {f1:.4f}")
 print("----------------------------------\n")
 
-# Detailed class-by-class report
 print("Detailed Classification Report:\n")
-print(classification_report(y_true_names, y_pred_names))
+print(classification_report(y_true_names, y_pred_names, zero_division=0))
 
 show_confusion_matrix(y_pred_names, y_true_names, classnames)

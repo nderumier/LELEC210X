@@ -26,6 +26,11 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 # -------------------------------------------------------
 # LOGIC: Loading .npy files from directory
 # -------------------------------------------------------
+# ... (rest of your imports and configuration remain the same)
+
+# -------------------------------------------------------
+# LOGIC: Loading .npy files from directory
+# -------------------------------------------------------
 X_all = []
 y_all = []
 
@@ -37,8 +42,12 @@ if not os.path.exists(INPUT_VECTORS_DIR):
 all_files = [f for f in os.listdir(INPUT_VECTORS_DIR) if f.endswith('.npy')]
 
 for filename in all_files:
-    # Extract class name from filename (e.g., "chainsaw_01.npy" -> "chainsaw")
-    classname = filename.split('_')[0]
+    # 1. Get the part before the first underscore (e.g., "fire1_01.npy" -> "fire1")
+    raw_name = filename.split('_')[0]
+    
+    # 2. Remove any trailing digits from that string (e.g., "fire1" -> "fire")
+    # This handles "fire1", "fire2", "chainsaw10", etc.
+    classname = raw_name.rstrip('0123456789')
     
     # Apply the class filter
     if classname in CLASSES_TO_REMOVE:
@@ -48,11 +57,12 @@ for filename in all_files:
     spec_matrix = np.load(filepath)
     
     if spec_matrix.shape == TARGET_SHAPE:
-        X_all.append(spec_matrix.flatten()) # Flatten to size 400
+        X_all.append(spec_matrix.flatten()) 
         y_all.append(classname)
     else:
         print(f"⚠️ Skipping {filename}: Wrong shape {spec_matrix.shape}")
 
+# ... (the rest of the training and evaluation code remains the same)
 X_all = np.array(X_all)
 y_all = np.array(y_all)
 
