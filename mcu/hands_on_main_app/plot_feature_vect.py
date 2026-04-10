@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 1. Load the file
-file_path = "feature_vector\\gunshot1_53.npy"
+file_path = "feature_vector\\gunshot1_10.npy"
 data = np.load(file_path)
 
 # 2. Plotting

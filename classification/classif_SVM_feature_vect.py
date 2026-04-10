@@ -100,13 +100,13 @@ scaler = StandardScaler()
 X_train_norm = scaler.fit_transform(X_train)
 X_test_norm = scaler.transform(X_test)
 
-pca = PCA(n_components=0.8, random_state=1)
+pca = PCA(n_components=0.95, random_state=1)
 X_train_pca = pca.fit_transform(X_train_norm)
 X_test_pca = pca.transform(X_test_norm)
 
 print("✔ Dimension après PCA :", X_train_pca.shape)
 
-model = SVC(kernel="rbf", C=4.281, gamma=0.0002, class_weight="balanced", probability=True, random_state=1)
+model = SVC(kernel="linear", C=0.1, gamma="scale", class_weight="balanced", probability=True, random_state=1)
 model.fit(X_train_pca, y_train)
 print("✔ Modèle entraîné !")
 

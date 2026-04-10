@@ -26,7 +26,7 @@ BEST_MODEL_PATH = os.path.join(MODEL_DIR, "best_audio_mlp.pth")
 TARGET_SHAPE = (20, 20)
 
 # Classes to exclude
-CLASSES_TO_REMOVE = ["background", "handsaw", "birds", "helicopter", "fireworks", "gunshot"]
+CLASSES_TO_REMOVE = ["background", "handsaw", "birds", "helicopter", "firorks"]
 
 os.makedirs(FM_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)

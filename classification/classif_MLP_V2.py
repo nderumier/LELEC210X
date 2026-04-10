@@ -25,7 +25,7 @@ from src.classification.utils.plots import show_confusion_matrix
 INPUT_VECTORS_DIR = "classification\\feature_vector" 
 FM_DIR = "classification\\data\\feature_matrices"
 MODEL_DIR = "classification\\data\\models"
-BEST_MODEL_PATH = os.path.join(MODEL_DIR, "best_audio_mlp.pth")
+BEST_MODEL_PATH = os.path.join(MODEL_DIR, "model_mlp_V2.pth")
 TARGET_SHAPE = (20, 20)
 
 CLASSES_TO_REMOVE = ["background", "handsaw", "birds", "helicopter", "firorks"]
@@ -127,8 +127,8 @@ def train_and_evaluate(params, train_dataset, val_dataset):
     else: # SGD
         optimizer = optim.SGD(model.parameters(), lr=params['lr'], weight_decay=params['weight_decay'], momentum=0.9)
     
-    epochs = 50 
-    patience = 7
+    epochs = 150 
+    patience = 30
     patience_counter = 0
     best_val_loss = float('inf')
     best_model_state = None
@@ -187,8 +187,8 @@ def objective(trial):
     global best_overall_loss, best_train_history, best_val_history
     
     # Let Optuna decide how many layers the network should have (1 to 4)
-    n_layers = trial.suggest_int('n_layers', 1, 4)
-    
+    # n_layers = trial.suggest_int('n_layers', 1, 4)
+    n_layers = 4
     # Create a list to hold the number of neurons for each layer
     hidden_units_list = []
     for i in range(n_layers):
@@ -198,9 +198,9 @@ def objective(trial):
     params = {
         'lr': trial.suggest_float('lr', 1e-4, 1e-2, log=True),
         'dropout': trial.suggest_float('dropout', 0.1, 0.6),
-        'batch_size': trial.suggest_categorical('batch_size', [64, 128, 256, 512]),
+        'batch_size': 128,
         'weight_decay': trial.suggest_float('weight_decay', 1e-5, 1e-2, log=True),
-        'optimizer_name': trial.suggest_categorical('optimizer_name', ['Adam', 'AdamW', 'SGD']),
+        'optimizer_name': 'AdamW',
         'n_layers': n_layers,
         'hidden_units_list': hidden_units_list
     }
@@ -256,7 +256,8 @@ plt.show()
 print(f"\n📥 Evaluating Best Model on Test Set...")
 
 # Extract the winning layer architecture from the dictionary
-n_layers_best = best_hyperparameters['n_layers']
+# n_layers_best = best_hyperparameters['n_layers']
+n_layers_best = 4
 hidden_units_best = [best_hyperparameters[f'n_units_l{i}'] for i in range(n_layers_best)]
 
 best_model = AudioMLP(
@@ -271,8 +272,8 @@ best_model.load_state_dict(torch.load(BEST_MODEL_PATH))
 best_model.eval()
 
 test_dataset = TensorDataset(torch.FloatTensor(X_test_pca), torch.LongTensor(y_test_enc))
-test_loader  = DataLoader(test_dataset, batch_size=best_hyperparameters['batch_size'], shuffle=False)
-
+# test_loader  = DataLoader(test_dataset, batch_size=best_hyperparameters['batch_size'], shuffle=False)
+test_loader  = DataLoader(test_dataset, batch_size=128, shuffle=False)
 y_pred_list, y_true_list = [], []
 
 with torch.no_grad():
@@ -300,3 +301,62 @@ print("Detailed Classification Report:\n")
 print(classification_report(y_true_names, y_pred_names, zero_division=0))
 
 show_confusion_matrix(y_pred_names, y_true_names, classnames)
+
+# -------------------------------------------------------
+# PART 7: FINAL TRAINING ON ENTIRE DATASET
+# -------------------------------------------------------
+print("\n🚀 Starting FINAL training on 100% of the data...")
+
+# 1. Combine all PCA-transformed features and labels
+X_final_full = np.vstack((X_train_pca, X_val_pca, X_test_pca))
+y_final_full = np.concatenate((y_train_enc, y_val_enc, y_test_enc))
+
+full_dataset = TensorDataset(torch.FloatTensor(X_final_full), torch.LongTensor(y_final_full))
+full_loader  = DataLoader(full_dataset, batch_size=128, shuffle=True)
+
+# 2. Re-initialize the model with the winning architecture
+# Note: We use the best_hyperparameters discovered by Optuna
+n_layers_final = 4
+hidden_units_final = [best_hyperparameters[f'n_units_l{i}'] for i in range(n_layers_final)]
+
+final_model = AudioMLP(
+    input_size=input_dim, 
+    num_classes=num_classes, 
+    n_layers=n_layers_final, 
+    hidden_units_list=hidden_units_final, 
+    dropout_rate=best_hyperparameters['dropout']
+).to(device)
+
+# 3. Setup optimizer (Using the best settings found)
+optimizer = optim.AdamW(
+    final_model.parameters(), 
+    lr=best_hyperparameters['lr'], 
+    weight_decay=best_hyperparameters['weight_decay']
+)
+criterion = nn.CrossEntropyLoss()
+
+# 4. Final Training Loop
+# We'll train for a fixed number of epochs (e.g., 100) 
+# because there's no validation set left for early stopping!
+epochs_final = 100 
+final_model.train()
+
+for epoch in range(epochs_final):
+    running_loss = 0.0
+    for X_batch, y_batch in full_loader:
+        X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+        optimizer.zero_grad()
+        outputs = final_model(X_batch)
+        loss = criterion(outputs, y_batch)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+
+    if (epoch + 1) % 10 == 0:
+        print(f"Final Training: Epoch [{epoch+1}/{epochs_final}], Loss: {running_loss/len(full_loader):.4f}")
+
+# 5. Save the ULTIMATE version of the model
+FINAL_PRODUCTION_MODEL_PATH = os.path.join(MODEL_DIR, "model_mlp_PRODUCTION.pth")
+torch.save(final_model.state_dict(), FINAL_PRODUCTION_MODEL_PATH)
+
+print(f"\n✅ DONE! The production-ready model is saved at: {FINAL_PRODUCTION_MODEL_PATH}")
