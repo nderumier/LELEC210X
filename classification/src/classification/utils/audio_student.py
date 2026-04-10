@@ -153,6 +153,40 @@ class AudioUtil:
         sig = fftconvolve(sig, echo_sig, mode="full")[:sig_len]
         return (sig, sr)
 
+    def echo_to_mel(mel_spec, delays=[4, 10], decay=0.6):
+        mel_echo = mel_spec.copy()
+
+        for i, d in enumerate(delays):
+            if d < mel_spec.shape[0]:  # axe 0 = temps
+                mel_echo[d:, :] += (decay ** (i + 1)) * mel_spec[:-d, :]
+
+        return mel_echo
+
+    def hide_band_mel_bandwidth(mel_spec, band_width=2):
+        mel_hidden = mel_spec.copy()
+        n_mels = mel_spec.shape[0]
+        start_band = random.randint(0, n_mels - band_width)
+        mel_hidden[start_band : start_band + band_width, :] = 0
+        return mel_hidden
+
+    def hide_random_bands_mel(mel_spec, n_bands=5):
+        """
+        Mask n random frequency bands (not necessarily consecutive)
+
+        mel_spec: np.array (n_mels, time)
+        n_bands: number of frequency bins to mask
+        """
+
+        mel_hidden = mel_spec.copy()
+        n_mels = mel_spec.shape[0]
+
+        # choisir n indices uniques
+        bands = np.random.choice(n_mels, size=n_bands, replace=False)
+
+        # masquer ces bandes
+        mel_hidden[bands, :] = 0
+
+        return mel_hidden     
 
     def filter(audio, filt) -> tuple[np.ndarray, int]:
         """
@@ -267,6 +301,65 @@ class AudioUtil:
         sig_aug = sig_aug / (np.max(np.abs(sig_aug)) + 1e-9)
 
         return sig_aug, sr
+
+
+    def add_noise_to_mel(mel_spec, noise_db=-20):
+        """
+        Ajoute un bruit avec une puissance relative en dB (ex: -20 dB = bruit faible)
+
+        mel_spec: np.array (n_mels, time)
+        noise_db: puissance du bruit relative au signal (en dB)
+        """
+
+        # Puissance du signal
+        signal_power = np.mean(mel_spec ** 2)
+
+        # Puissance cible du bruit
+        noise_power_target = signal_power * (10 ** (noise_db / 10))
+
+        # Générer bruit blanc
+        noise = np.random.randn(*mel_spec.shape)
+
+        # Puissance actuelle du bruit
+        noise_power = np.mean(noise ** 2)
+
+        # Mise à l'échelle pour atteindre la puissance cible
+        noise = noise * np.sqrt(noise_power_target / (noise_power + 1e-12))
+
+        # Ajouter le bruit
+        mel_noisy = mel_spec + noise
+
+        return mel_noisy
+
+    def add_bg_to_mel(mel, bg_mel, db=-20):
+        """
+        Add background mel spectrogram at fixed dB.
+        """
+
+        # Match shapes
+        if bg_mel.shape[1] < mel.shape[1]:
+            pad_width = mel.shape[1] - bg_mel.shape[1]
+            bg_mel = np.pad(bg_mel, ((0, 0), (0, pad_width)))
+        else:
+            bg_mel = bg_mel[:, :mel.shape[1]]
+
+        # dB → amplitude
+        factor = 10 ** (db / 20)
+
+        # Normalize
+        mel_norm = mel / (np.max(np.abs(mel)) + 1e-9)
+        bg_norm = bg_mel / (np.max(np.abs(bg_mel)) + 1e-9)
+
+        # Mix
+        mel_aug = mel_norm + factor * bg_norm
+
+        # Renormalize
+        mel_aug = mel_aug / (np.max(np.abs(mel_aug)) + 1e-9)
+
+        return mel_aug
+    
+
+
     def specgram(audio, Nft=512, fs2=11025) -> np.ndarray:
         """
         Compute a Spectrogram.

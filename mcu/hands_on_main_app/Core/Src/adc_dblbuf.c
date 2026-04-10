@@ -150,7 +150,7 @@ static void send_spectrogram() {
 	S2LP_Send(packet, PACKET_LENGTH);
 	stop_cycle_count("Send packet");
 
-	print_encoded_packet(packet);
+//	print_encoded_packet(packet);
 }
 
 static void ADC_Callback(int buf_cplt) {
@@ -191,13 +191,20 @@ static void ADC_Callback(int buf_cplt) {
 	/* ===== 2) Heavy processing only during an event ===== */
 	Spectrogram_Format((q15_t *)ADCData[buf_cplt]);
 	Spectrogram_Compute((q15_t *)ADCData[buf_cplt], mel_vectors[cur_melvec]);
+	printf("DF:HEX:");
+	for (int i = 0; i < MELVEC_LENGTH; i++) {
+	    // Print each 16-bit Mel bin as 4 hex characters
+	    // %04x ensures leading zeros are kept (e.g., 5 becomes 0005)
+	    printf("%04x", (uint16_t)mel_vectors[cur_melvec][i]);
+	}
+	printf("\r\n");
 	cur_melvec++;
 
 	ADCDataRdy[buf_cplt] = 0;
 
 	/* ===== 3) Once we have N_MELVECS -> send one packet and go back to listening ===== */
 	if (recording && (cur_melvec >= N_MELVECS)) {
-		print_spectrogram();
+//		print_spectrogram();
 		send_spectrogram();
 
 		recording = 0;

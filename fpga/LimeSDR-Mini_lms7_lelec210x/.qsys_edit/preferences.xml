@@ -3,7 +3,7 @@
  <debug showDebugMenu="0" />
  <systemtable filter="All Interfaces">
   <columns>
-   <connections preferredWidth="111" />
+   <connections preferredWidth="143" />
    <irq preferredWidth="34" />
    <name preferredWidth="264" />
    <inputclock preferredWidth="95" />
@@ -14,9 +14,9 @@
   </columns>
  </systemtable>
  <library expandedCategories="Project,Library/DSP,Library" />
- <window width="2880" height="1704" x="0" y="0" />
+ <window width="2878" height="1702" x="1" y="1" />
  <generation
-   path="ip/packet_presence_detection/"
+   path="_PROJECT_NAME_/"
    testbench_system="STANDARD"
    testbench_simulation="VERILOG"
    greybox="1"
