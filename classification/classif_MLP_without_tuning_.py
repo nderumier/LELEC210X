@@ -1,31 +1,28 @@
 import os
-import random
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score, classification_report, precision_recall_fscore_support
-from sklearn.utils import shuffle
 
-# PyTorch & Optuna Imports
+# PyTorch Imports
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader
-import optuna 
-from optuna.visualization.matplotlib import plot_optimization_history, plot_param_importances
 
 # Custom imports
 from src.classification.utils.plots import show_confusion_matrix
 
 # -------------------------------------------------------
-# CONFIGURATION
+# CONFIGURATION & HYPERPARAMETERS
 # -------------------------------------------------------
 INPUT_VECTORS_DIR = "classification\\feature_vector" 
 FM_DIR = "classification\\data\\feature_matrices"
 MODEL_DIR = "classification\\data\\models"
-BEST_MODEL_PATH = os.path.join(MODEL_DIR, "model_mlp_V2.pth")
+BEST_EVAL_MODEL_PATH = os.path.join(MODEL_DIR, "model_mlp_eval.pth")
+FINAL_PRODUCTION_MODEL_PATH = os.path.join(MODEL_DIR, "model_mlp_normal.pth")
 TARGET_SHAPE = (20, 20)
 
 CLASSES_TO_REMOVE = ["background", "handsaw", "birds", "helicopter", "firorks"]
@@ -33,8 +30,31 @@ CLASSES_TO_REMOVE = ["background", "handsaw", "birds", "helicopter", "firorks"]
 os.makedirs(FM_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
+# ⬇️ SET YOUR WINNING OPTUNA HYPERPARAMETERS HERE ⬇️
+# normal feature vector
+# HYPERPARAMS = {
+#     'lr': 0.006524803678756985,                  # Learning rate
+#     'dropout': 0.3337918868738315,               # Dropout rate
+#     'batch_size': 128,            # Batch size
+#     'weight_decay': 2.346137319834059e-05,         # Weight decay (L2 penalty)
+#     'optimizer_name': 'AdamW',    # 'AdamW', 'Adam', or 'SGD'
+#     'n_layers': 4,                # Number of hidden layers
+#     'hidden_units_list': [32, 64, 32, 160] # Must have exactly 'n_layers' elements
+# }
+
+# log feature vector
+HYPERPARAMS = {
+    'lr': 0.00426406198135054,                  # Learning rate
+    'dropout': 0.5643027358745762,               # Dropout rate
+    'batch_size': 128,            # Batch size
+    'weight_decay': 4.624159846965634e-05,         # Weight decay (L2 penalty)
+    'optimizer_name': 'AdamW',    # 'AdamW', 'Adam', or 'SGD'
+    'n_layers': 4,                # Number of hidden layers
+    'hidden_units_list': [192, 256, 128, 256] # Must have exactly 'n_layers' elements
+}
+
 # -------------------------------------------------------
-# PART 0 & 1: Data Loading and Preprocessing
+# PART 1: Data Loading and Preprocessing
 # -------------------------------------------------------
 X_all, y_all = [], []
 print(f"📂 Scanning directory: {INPUT_VECTORS_DIR}")
@@ -48,12 +68,11 @@ for filename in [f for f in os.listdir(INPUT_VECTORS_DIR) if f.endswith('.npy')]
         
     filepath = os.path.join(INPUT_VECTORS_DIR, filename)
     spec_matrix = np.load(filepath)
-
     # --- ADD THE LOG TRANSFORMATION HERE ---
     # We add 1e-8 (a tiny number) to prevent log(0) errors if your audio has true silence
     spec_matrix = np.log(spec_matrix + 1e-8)
     # ---------------------------------------
-    
+
     if spec_matrix.shape == TARGET_SHAPE:
         X_all.append(spec_matrix.flatten())
         y_all.append(classname)
@@ -62,6 +81,7 @@ X_all, y_all = np.array(X_all), np.array(y_all)
 classnames = sorted(list(set(y_all)))
 print(f"✔ Classes kept: {', '.join(classnames)}")
 
+# Split for evaluation purposes
 X_train, X_temp, y_train, y_temp = train_test_split(X_all, y_all, test_size=0.3, random_state=42, stratify=y_all)
 X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp)
 
@@ -75,20 +95,23 @@ X_train_sc = scaler.fit_transform(X_train)
 X_val_sc   = scaler.transform(X_val)
 X_test_sc  = scaler.transform(X_test)
 
-pca = PCA(n_components=0.8, random_state=1)
+pca = PCA(n_components=0.85, random_state=1)
 X_train_pca = pca.fit_transform(X_train_sc)
 X_val_pca   = pca.transform(X_val_sc)
 X_test_pca  = pca.transform(X_test_sc)
 
+# input_dim = X_train_sc.shape[1]
 input_dim = X_train_pca.shape[1]
 num_classes = len(classnames)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# train_dataset = TensorDataset(torch.FloatTensor(X_train_sc), torch.LongTensor(y_train_enc))
+# val_dataset   = TensorDataset(torch.FloatTensor(X_val_sc), torch.LongTensor(y_val_enc))
 train_dataset = TensorDataset(torch.FloatTensor(X_train_pca), torch.LongTensor(y_train_enc))
 val_dataset   = TensorDataset(torch.FloatTensor(X_val_pca), torch.LongTensor(y_val_enc))
 
 # -------------------------------------------------------
-# PART 2: FULLY DYNAMIC NEURAL NETWORK
+# PART 2: NEURAL NETWORK ARCHITECTURE
 # -------------------------------------------------------
 class AudioMLP(nn.Module):
     def __init__(self, input_size, num_classes, n_layers, hidden_units_list, dropout_rate):
@@ -97,49 +120,43 @@ class AudioMLP(nn.Module):
         layers = []
         in_features = input_size
         
-        # Dynamically stack the exact number of layers Optuna asks for
         for i in range(n_layers):
             layers.append(nn.Linear(in_features, hidden_units_list[i]))
             layers.append(nn.ReLU())
             layers.append(nn.Dropout(dropout_rate))
-            in_features = hidden_units_list[i] # Output of this layer is input to the next
+            in_features = hidden_units_list[i] 
             
-        # Add the final classification layer
         layers.append(nn.Linear(in_features, num_classes))
-        
-        # Unpack the list of layers into a Sequential model
         self.network = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.network(x)
 
 # -------------------------------------------------------
-# PART 3: TRAINING FUNCTION
+# PART 3: TRAINING FUNCTION (For Evaluation Model)
 # -------------------------------------------------------
 def train_and_evaluate(params, train_dataset, val_dataset):
     train_loader = DataLoader(train_dataset, batch_size=params['batch_size'], shuffle=True)
     val_loader   = DataLoader(val_dataset, batch_size=params['batch_size'], shuffle=False)
 
-    # Instantiate the dynamic model
     model = AudioMLP(input_dim, num_classes, params['n_layers'], params['hidden_units_list'], params['dropout']).to(device)
     criterion = nn.CrossEntropyLoss()
     
-    # Dynamically select the optimizer
     if params['optimizer_name'] == 'AdamW':
         optimizer = optim.AdamW(model.parameters(), lr=params['lr'], weight_decay=params['weight_decay'])
     elif params['optimizer_name'] == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=params['lr'], weight_decay=params['weight_decay'])
-    else: # SGD
+    else: 
         optimizer = optim.SGD(model.parameters(), lr=params['lr'], weight_decay=params['weight_decay'], momentum=0.9)
     
     epochs = 150 
     patience = 30
     patience_counter = 0
     best_val_loss = float('inf')
-    best_model_state = None
     
     train_loss_history, val_loss_history = [], []
 
+    print("\n⏳ Training evaluation model...")
     for epoch in range(epochs):
         model.train()
         running_train_loss = 0.0
@@ -169,86 +186,26 @@ def train_and_evaluate(params, train_dataset, val_dataset):
 
         if epoch_val_loss < best_val_loss:
             best_val_loss = epoch_val_loss
-            best_model_state = model.state_dict()
+            torch.save(model.state_dict(), BEST_EVAL_MODEL_PATH)
             patience_counter = 0 
         else:
             patience_counter += 1
 
         if patience_counter >= patience:
+            print(f"⏹ Early stopping triggered at epoch {epoch+1}")
             break 
             
-    return best_val_loss, best_model_state, train_loss_history, val_loss_history
+    return train_loss_history, val_loss_history
+
+train_history, val_history = train_and_evaluate(HYPERPARAMS, train_dataset, val_dataset)
 
 # -------------------------------------------------------
-# PART 4: OPTUNA HYPERPARAMETER TUNING
-# -------------------------------------------------------
-print("\n🔍 Starting Optuna Hyperparameter Optimization (Ultimate Edition)...")
-
-best_overall_loss = float('inf')
-best_train_history = []
-best_val_history = []
-
-def objective(trial):
-    global best_overall_loss, best_train_history, best_val_history
-    
-    # Let Optuna decide how many layers the network should have (1 to 4)
-    # n_layers = trial.suggest_int('n_layers', 1, 4)
-    n_layers = 4
-    # Create a list to hold the number of neurons for each layer
-    hidden_units_list = []
-    for i in range(n_layers):
-        # Optuna independently decides the width of layer 'i'
-        hidden_units_list.append(trial.suggest_int(f'n_units_l{i}', 32, 256, step=32))
-    
-    params = {
-        'lr': trial.suggest_float('lr', 1e-4, 1e-2, log=True),
-        'dropout': trial.suggest_float('dropout', 0.1, 0.6),
-        'batch_size': 128,
-        'weight_decay': trial.suggest_float('weight_decay', 1e-5, 1e-2, log=True),
-        'optimizer_name': 'AdamW',
-        'n_layers': n_layers,
-        'hidden_units_list': hidden_units_list
-    }
-    
-    val_loss, model_state, t_hist, v_hist = train_and_evaluate(params, train_dataset, val_dataset)
-    
-    if val_loss < best_overall_loss:
-        best_overall_loss = val_loss
-        best_train_history = t_hist
-        best_val_history = v_hist
-        torch.save(model_state, BEST_MODEL_PATH)
-        
-    return val_loss
-
-study = optuna.create_study(direction='minimize')
-study.optimize(objective, n_trials=140)
-
-best_hyperparameters = study.best_params
-
-print(f"\n==================================================")
-print(f"👑 OPTUNA FINISHED! BEST HYPERPARAMETERS:")
-print(f"{best_hyperparameters}")
-print(f"🌟 Best Validation Loss: {study.best_value:.4f}")
-print(f"==================================================")
-
-# --- OPTUNA VISUAL DASHBOARDS ---
-plot_optimization_history(study)
-plt.title("Optuna: Optimization History (All Trials)")
-plt.tight_layout()
-plt.show()
-
-plot_param_importances(study)
-plt.title("Optuna: Hyperparameter Importance")
-plt.tight_layout()
-plt.show()
-
-# -------------------------------------------------------
-# PART 5: VISUALIZE TRAINING PROGRESS (Best Model)
+# PART 4: VISUALIZE TRAINING PROGRESS
 # -------------------------------------------------------
 plt.figure(figsize=(8, 5))
-plt.plot(best_train_history, label='Training Loss', color='blue')
-plt.plot(best_val_history, label='Validation Loss', color='red')
-plt.title(f'Learning Curve for Best Model')
+plt.plot(train_history, label='Training Loss', color='blue')
+plt.plot(val_history, label='Validation Loss', color='red')
+plt.title('Learning Curve (Evaluation Model)')
 plt.xlabel('Epochs')
 plt.ylabel('Loss (CrossEntropy)')
 plt.legend()
@@ -256,35 +213,30 @@ plt.grid(True)
 plt.show()
 
 # -------------------------------------------------------
-# PART 6: EVALUATION ON TEST SET 
+# PART 5: EVALUATION ON TEST SET 
 # -------------------------------------------------------
-print(f"\n📥 Evaluating Best Model on Test Set...")
+print(f"\n📥 Evaluating Model on Test Set...")
 
-# Extract the winning layer architecture from the dictionary
-# n_layers_best = best_hyperparameters['n_layers']
-n_layers_best = 4
-hidden_units_best = [best_hyperparameters[f'n_units_l{i}'] for i in range(n_layers_best)]
-
-best_model = AudioMLP(
+eval_model = AudioMLP(
     input_size=input_dim, 
     num_classes=num_classes, 
-    n_layers=n_layers_best, 
-    hidden_units_list=hidden_units_best, 
-    dropout_rate=best_hyperparameters['dropout']
+    n_layers=HYPERPARAMS['n_layers'], 
+    hidden_units_list=HYPERPARAMS['hidden_units_list'], 
+    dropout_rate=HYPERPARAMS['dropout']
 ).to(device)
 
-best_model.load_state_dict(torch.load(BEST_MODEL_PATH))
-best_model.eval()
+eval_model.load_state_dict(torch.load(BEST_EVAL_MODEL_PATH))
+eval_model.eval()
 
+# test_dataset = TensorDataset(torch.FloatTensor(X_test_sc), torch.LongTensor(y_test_enc))
 test_dataset = TensorDataset(torch.FloatTensor(X_test_pca), torch.LongTensor(y_test_enc))
-# test_loader  = DataLoader(test_dataset, batch_size=best_hyperparameters['batch_size'], shuffle=False)
-test_loader  = DataLoader(test_dataset, batch_size=128, shuffle=False)
+test_loader  = DataLoader(test_dataset, batch_size=HYPERPARAMS['batch_size'], shuffle=False)
 y_pred_list, y_true_list = [], []
 
 with torch.no_grad():
     for X_batch, y_batch in test_loader:
         X_batch = X_batch.to(device)
-        outputs = best_model(X_batch)
+        outputs = eval_model(X_batch)
         _, predicted = torch.max(outputs, 1)
         y_pred_list.extend(predicted.cpu().numpy())
         y_true_list.extend(y_batch.numpy())
@@ -308,41 +260,35 @@ print(classification_report(y_true_names, y_pred_names, zero_division=0))
 show_confusion_matrix(y_pred_names, y_true_names, classnames)
 
 # -------------------------------------------------------
-# PART 7: FINAL TRAINING ON ENTIRE DATASET
+# PART 6: FINAL TRAINING ON ENTIRE DATASET
 # -------------------------------------------------------
 print("\n🚀 Starting FINAL training on 100% of the data...")
 
-# 1. Combine all PCA-transformed features and labels
+# X_final_full = np.vstack((X_train_sc, X_val_sc, X_test_sc))
 X_final_full = np.vstack((X_train_pca, X_val_pca, X_test_pca))
 y_final_full = np.concatenate((y_train_enc, y_val_enc, y_test_enc))
 
 full_dataset = TensorDataset(torch.FloatTensor(X_final_full), torch.LongTensor(y_final_full))
-full_loader  = DataLoader(full_dataset, batch_size=128, shuffle=True)
-
-# 2. Re-initialize the model with the winning architecture
-# Note: We use the best_hyperparameters discovered by Optuna
-n_layers_final = 4
-hidden_units_final = [best_hyperparameters[f'n_units_l{i}'] for i in range(n_layers_final)]
+full_loader  = DataLoader(full_dataset, batch_size=HYPERPARAMS['batch_size'], shuffle=True)
 
 final_model = AudioMLP(
     input_size=input_dim, 
     num_classes=num_classes, 
-    n_layers=n_layers_final, 
-    hidden_units_list=hidden_units_final, 
-    dropout_rate=best_hyperparameters['dropout']
+    n_layers=HYPERPARAMS['n_layers'], 
+    hidden_units_list=HYPERPARAMS['hidden_units_list'], 
+    dropout_rate=HYPERPARAMS['dropout']
 ).to(device)
 
-# 3. Setup optimizer (Using the best settings found)
-optimizer = optim.AdamW(
-    final_model.parameters(), 
-    lr=best_hyperparameters['lr'], 
-    weight_decay=best_hyperparameters['weight_decay']
-)
+if HYPERPARAMS['optimizer_name'] == 'AdamW':
+    optimizer = optim.AdamW(final_model.parameters(), lr=HYPERPARAMS['lr'], weight_decay=HYPERPARAMS['weight_decay'])
+elif HYPERPARAMS['optimizer_name'] == 'Adam':
+    optimizer = optim.Adam(final_model.parameters(), lr=HYPERPARAMS['lr'], weight_decay=HYPERPARAMS['weight_decay'])
+else:
+    optimizer = optim.SGD(final_model.parameters(), lr=HYPERPARAMS['lr'], weight_decay=HYPERPARAMS['weight_decay'], momentum=0.9)
+
 criterion = nn.CrossEntropyLoss()
 
-# 4. Final Training Loop
-# We'll train for a fixed number of epochs (e.g., 100) 
-# because there's no validation set left for early stopping!
+# Train for a fixed number of epochs since we have no validation set
 epochs_final = 100 
 final_model.train()
 
@@ -360,8 +306,16 @@ for epoch in range(epochs_final):
     if (epoch + 1) % 10 == 0:
         print(f"Final Training: Epoch [{epoch+1}/{epochs_final}], Loss: {running_loss/len(full_loader):.4f}")
 
-# 5. Save the ULTIMATE version of the model
-FINAL_PRODUCTION_MODEL_PATH = os.path.join(MODEL_DIR, "model_mlp_PRODUCTION.pth")
 torch.save(final_model.state_dict(), FINAL_PRODUCTION_MODEL_PATH)
+import pickle
 
+# After training is complete, save the scaler and encoder
+preprocessing_data = {
+    "scaler": scaler,
+    "pca": pca,
+    "label_encoder": label_encoder
+}
+
+with open(os.path.join(MODEL_DIR, "scaler_and_encoder.pickle"), "wb") as f:
+    pickle.dump(preprocessing_data, f)
 print(f"\n✅ DONE! The production-ready model is saved at: {FINAL_PRODUCTION_MODEL_PATH}")
