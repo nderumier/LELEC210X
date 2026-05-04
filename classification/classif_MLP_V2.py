@@ -1,5 +1,6 @@
 import os
 import random
+import re # <-- ADDED: Needed for regex string manipulation
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -22,7 +23,7 @@ from src.classification.utils.plots import show_confusion_matrix
 # -------------------------------------------------------
 # CONFIGURATION
 # -------------------------------------------------------
-INPUT_VECTORS_DIR = "classification\\feature_vector" 
+INPUT_VECTORS_DIR = "classification\\feature_vector_sud11" 
 FM_DIR = "classification\\data\\feature_matrices"
 MODEL_DIR = "classification\\data\\models"
 BEST_MODEL_PATH = os.path.join(MODEL_DIR, "model_mlp_V2.pth")
@@ -43,7 +44,15 @@ if not os.path.exists(INPUT_VECTORS_DIR):
     raise FileNotFoundError(f"❌ Directory not found: {INPUT_VECTORS_DIR}")
 
 for filename in [f for f in os.listdir(INPUT_VECTORS_DIR) if f.endswith('.npy')]:
-    classname = filename.split('_')[0]
+    
+    # --- MODIFIED LOGIC HERE ---
+    # 1. Grab everything before the first underscore (e.g., 'fire8' from 'fire8_01.npy')
+    prefix = filename.split('_')[0]
+    
+    # 2. Strip all numbers out of the prefix to leave just the class name (e.g., 'fire')
+    classname = re.sub(r'\d+', '', prefix).lower()
+    # ---------------------------
+    
     if classname in CLASSES_TO_REMOVE: continue
         
     filepath = os.path.join(INPUT_VECTORS_DIR, filename)
@@ -51,7 +60,7 @@ for filename in [f for f in os.listdir(INPUT_VECTORS_DIR) if f.endswith('.npy')]
 
     # --- ADD THE LOG TRANSFORMATION HERE ---
     # We add 1e-8 (a tiny number) to prevent log(0) errors if your audio has true silence
-    spec_matrix = np.log(spec_matrix + 1e-8)
+    # spec_matrix = np.log(spec_matrix + 1e-8)
     # ---------------------------------------
     
     if spec_matrix.shape == TARGET_SHAPE:

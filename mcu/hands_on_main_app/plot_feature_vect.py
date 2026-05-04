@@ -12,11 +12,7 @@ from classification.utils.audio_student import AudioUtil, Feature_vector_DS
 
 
 # 1. Load the file
-<<<<<<< HEAD
-file_path = "feature_vector\\gunshot1_10.npy"
-=======
-file_path = "classification\\feature_vector\\fireworks1_100.npy"
->>>>>>> 833381599eaf84b9a527803c99b9bf4cf7c6eb91
+file_path = "classification\\feature_vector_sud11\\fireworks9_78.npy"
 data = np.load(file_path)
 
 filename = file_path.split("\\")[-1]          # récupère "gunshot1_53.npy"

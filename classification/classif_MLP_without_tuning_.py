@@ -1,4 +1,5 @@
 import os
+import re # <-- ADDED: For regex string manipulation
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -15,14 +16,31 @@ from torch.utils.data import TensorDataset, DataLoader
 # Custom imports
 from src.classification.utils.plots import show_confusion_matrix
 
+def suppress_low_frequencies(data, n_melvecs_to_suppress=10):
+    """
+    Description: Cette fonction supprime les n_melvecs_to_suppress premiers melvecs (les plus basses fréquences) de chaque échantillon du dataset.
+    Inputs:
+        - data: numpy array de forme (n_samples, n_features) contenant les échantillons du dataset
+        - n_melvecs_to_suppress: int spécifiant le nombre de melvalues à supprimer pour chaque melvector. 
+    Outputs:
+        - new_data: numpy array de forme (n_samples, n_features - n_melvecs_to_suppress) contenant les échantillons du dataset après la suppression.
+    """
+    # Masque pour chaque ligne
+    mask = np.ones((data.shape[0], 400), dtype=bool)
+    mask[:, np.r_[0:400:20][:, None] + np.arange(n_melvecs_to_suppress)] = False
+
+    # Résultat : tableau de taille (x, 200) si on supprime 10 melvecs
+    data = data[mask].reshape(data.shape[0], -1)
+    return data
+
 # -------------------------------------------------------
 # CONFIGURATION & HYPERPARAMETERS
 # -------------------------------------------------------
-INPUT_VECTORS_DIR = "classification\\feature_vector" 
+INPUT_VECTORS_DIR = "classification\\feature_vector_sud11" 
 FM_DIR = "classification\\data\\feature_matrices"
 MODEL_DIR = "classification\\data\\models"
 BEST_EVAL_MODEL_PATH = os.path.join(MODEL_DIR, "model_mlp_eval.pth")
-FINAL_PRODUCTION_MODEL_PATH = os.path.join(MODEL_DIR, "model_mlp_normal.pth")
+FINAL_PRODUCTION_MODEL_PATH = os.path.join(MODEL_DIR, "model_mlp_log.pth")
 TARGET_SHAPE = (20, 20)
 
 CLASSES_TO_REMOVE = ["background", "handsaw", "birds", "helicopter", "firorks"]
@@ -32,26 +50,26 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 
 # ⬇️ SET YOUR WINNING OPTUNA HYPERPARAMETERS HERE ⬇️
 # normal feature vector
-# HYPERPARAMS = {
-#     'lr': 0.006524803678756985,                  # Learning rate
-#     'dropout': 0.3337918868738315,               # Dropout rate
-#     'batch_size': 128,            # Batch size
-#     'weight_decay': 2.346137319834059e-05,         # Weight decay (L2 penalty)
-#     'optimizer_name': 'AdamW',    # 'AdamW', 'Adam', or 'SGD'
-#     'n_layers': 4,                # Number of hidden layers
-#     'hidden_units_list': [32, 64, 32, 160] # Must have exactly 'n_layers' elements
-# }
-
-# log feature vector
 HYPERPARAMS = {
-    'lr': 0.00426406198135054,                  # Learning rate
-    'dropout': 0.5643027358745762,               # Dropout rate
+    'lr': 0.0032882396306556177,                  # Learning rate
+    'dropout': 0.35916057421319497,               # Dropout rate
     'batch_size': 128,            # Batch size
-    'weight_decay': 4.624159846965634e-05,         # Weight decay (L2 penalty)
+    'weight_decay': 2.2310790580132363e-05,         # Weight decay (L2 penalty)
     'optimizer_name': 'AdamW',    # 'AdamW', 'Adam', or 'SGD'
     'n_layers': 4,                # Number of hidden layers
-    'hidden_units_list': [192, 256, 128, 256] # Must have exactly 'n_layers' elements
+    'hidden_units_list': [64, 96, 160, 224] # Must have exactly 'n_layers' elements
 }
+
+# log feature vector
+# HYPERPARAMS = {
+#     'lr': 0.005535994203842654,                # Learning rate
+#     'dropout': 0.5414923867703292,             # Dropout rate
+#     'batch_size': 128,            # Batch size
+#     'weight_decay': 9.116908763639663e-05,       # Weight decay (L2 penalty)
+#     'optimizer_name': 'AdamW',    # 'AdamW', 'Adam', or 'SGD'
+#     'n_layers': 4,                # Number of hidden layers
+#     'hidden_units_list': [128, 128, 96, 224] # Must have exactly 'n_layers' elements
+# }
 
 # -------------------------------------------------------
 # PART 1: Data Loading and Preprocessing
@@ -63,14 +81,19 @@ if not os.path.exists(INPUT_VECTORS_DIR):
     raise FileNotFoundError(f"❌ Directory not found: {INPUT_VECTORS_DIR}")
 
 for filename in [f for f in os.listdir(INPUT_VECTORS_DIR) if f.endswith('.npy')]:
-    classname = filename.split('_')[0]
+    
+    # --- MODIFIED LOGIC HERE ---
+    prefix = filename.split('_')[0]
+    classname = re.sub(r'\d+', '', prefix).lower()
+    # ---------------------------
+    
     if classname in CLASSES_TO_REMOVE: continue
         
     filepath = os.path.join(INPUT_VECTORS_DIR, filename)
     spec_matrix = np.load(filepath)
     # --- ADD THE LOG TRANSFORMATION HERE ---
     # We add 1e-8 (a tiny number) to prevent log(0) errors if your audio has true silence
-    spec_matrix = np.log(spec_matrix + 1e-8)
+    # spec_matrix = np.log(spec_matrix + 1e-8)
     # ---------------------------------------
 
     if spec_matrix.shape == TARGET_SHAPE:
@@ -78,6 +101,11 @@ for filename in [f for f in os.listdir(INPUT_VECTORS_DIR) if f.endswith('.npy')]
         y_all.append(classname)
 
 X_all, y_all = np.array(X_all), np.array(y_all)
+# =======================================================
+print(f"🔧 Original features shape: {X_all.shape}")
+# X_all = suppress_low_frequencies(X_all, n_melvecs_to_suppress=2)
+print(f"🔧 Features shape after suppressing low frequencies: {X_all.shape}")
+#=======================================================
 classnames = sorted(list(set(y_all)))
 print(f"✔ Classes kept: {', '.join(classnames)}")
 
@@ -149,8 +177,8 @@ def train_and_evaluate(params, train_dataset, val_dataset):
     else: 
         optimizer = optim.SGD(model.parameters(), lr=params['lr'], weight_decay=params['weight_decay'], momentum=0.9)
     
-    epochs = 150 
-    patience = 30
+    epochs = 500 
+    patience = 500
     patience_counter = 0
     best_val_loss = float('inf')
     
@@ -289,7 +317,7 @@ else:
 criterion = nn.CrossEntropyLoss()
 
 # Train for a fixed number of epochs since we have no validation set
-epochs_final = 100 
+epochs_final = 500 
 final_model.train()
 
 for epoch in range(epochs_final):
