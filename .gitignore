@@ -1,5 +1,8 @@
 # Python
-
+venv/
+.venv/
+env/
+.env/
 __pycache__/
 .mypy_cache/
 .ipynb_checkpoints
@@ -8,7 +11,6 @@ __pycache__/
 *.egg-info/
 
 # Leaderboard
-
 !leaderboard/**/*.html
 leaderboard/.config.json
 database.db
@@ -17,7 +19,6 @@ node_modules/
 moresoundfiles/
 
 # TeX
-
 tex/*/*.aux
 tex/*/*.fdb_latexmk
 tex/*/*.fls
@@ -39,22 +40,18 @@ _minted-*/
 tex/hands_on_wireless_simulation/modulate.py
 
 # MCU
-
 mcu/Debug/
 mcu/Release/
 mcu/.settings/
 mcu/*.launch
 
 # Telecom
-
-
 telecom/python/telecom/TA*
 telecom/python/telecom/sim_outputs.csv
 telecom/**/build/
 telecom/**/gr-fsk/apps/*.py
 telecom/**/gr-fsk/apps/*.txt
 !telecom/**/gr-fsk/apps/CMakeLists.txt
-
 telecom\python\telecom\TA*.py
 
 # FPGA

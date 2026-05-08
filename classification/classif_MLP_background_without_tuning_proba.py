@@ -40,7 +40,7 @@ FM_DIR = "classification\\data\\feature_matrices"
 MODEL_DIR = "classification\\data\\models"
 
 # --- NEW: File path for exporting the complete ensemble configuration ---
-ENSEMBLE_PARAMS_PATH = os.path.join(MODEL_DIR, "ensemble_production_params.pkl")
+ENSEMBLE_PARAMS_PATH = os.path.join(MODEL_DIR, "ensemble_production_params_test.pkl")
 # ----------------------------------------------------------------------
 
 TARGET_SHAPE = (20, 20)
@@ -57,11 +57,11 @@ OPTIMIZER_NAME = 'AdamW'
 ALLOWED_PREFIXES = []
 
 # --- ENSEMBLE MASKING CONFIGURATION ---
-TOP_BANDS_TO_HIDE = [0, 3, 5] 
-BOTTOM_BANDS_TO_HIDE = [ 2, 5] 
+TOP_BANDS_TO_HIDE = [0, 2, 3, 5, 6, 7,14] 
+BOTTOM_BANDS_TO_HIDE = [1, 2, 3, 5] 
 
 MAX_EPOCHS = 500
-PATIENCE = 30  
+PATIENCE = 60  
 
 os.makedirs(FM_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
@@ -292,7 +292,7 @@ for strategy, num_bands in configurations:
         'mask_strategy': strategy,
         'num_bands': num_bands,
         'scaler_mean': scaler.mean_,
-        'scaler_var': scaler.var_,
+        'scaler_scale': scaler.scale_,
         'pca_components': pca.components_,
         'pca_mean': pca.mean_,
         'class_precisions': precisions
